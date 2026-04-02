@@ -1,7 +1,6 @@
 import { Handle, Position, useEdges, type NodeProps } from 'reactflow'
 import { NodeCard } from './NodeCard'
 import { useWorkflowStore } from '../../store/workflowStore'
-import { useExecute } from '../../hooks/useExecute'
 import { GEMINI_MODELS } from '../../types'
 import type { LLMNodeData } from '../../types'
 
@@ -9,7 +8,6 @@ export function LLMNode({ id, data }: NodeProps<LLMNodeData>) {
   const updateNodeData = useWorkflowStore(s => s.updateNodeData)
   const nodeResults    = useWorkflowStore(s => s.nodeResults)
   const edges          = useEdges()
-  const { execute } = useExecute()
 
   const result = nodeResults[id]
 

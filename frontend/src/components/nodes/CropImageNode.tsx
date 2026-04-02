@@ -1,7 +1,6 @@
 import { Handle, Position, useEdges, type NodeProps } from 'reactflow'
 import { NodeCard } from './NodeCard'
 import { useWorkflowStore } from '../../store/workflowStore'
-import { useExecute } from '../../hooks/useExecute'
 import type { CropImageNodeData } from '../../types'
 
 function SliderRow({
@@ -30,7 +29,6 @@ export function CropImageNode({ id, data }: NodeProps<CropImageNodeData>) {
   const updateNodeData = useWorkflowStore(s => s.updateNodeData)
   const nodeResults    = useWorkflowStore(s => s.nodeResults)
   const edges          = useEdges()
-  const { execute } = useExecute()
 
   const connectedTargets = new Set(edges.filter(e => e.target === id).map(e => e.targetHandle))
   const result = nodeResults[id]

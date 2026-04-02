@@ -1,14 +1,12 @@
 import { Handle, Position, useEdges, type NodeProps } from 'reactflow'
 import { NodeCard } from './NodeCard'
 import { useWorkflowStore } from '../../store/workflowStore'
-import { useExecute } from '../../hooks/useExecute'
 import type { ExtractFrameNodeData } from '../../types'
 
 export function ExtractFrameNode({ id, data }: NodeProps<ExtractFrameNodeData>) {
   const updateNodeData = useWorkflowStore(s => s.updateNodeData)
   const nodeResults    = useWorkflowStore(s => s.nodeResults)
   const edges          = useEdges()
-  const { execute } = useExecute()
 
   const connectedTargets = new Set(edges.filter(e => e.target === id).map(e => e.targetHandle))
   const result = nodeResults[id]
