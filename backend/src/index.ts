@@ -10,10 +10,12 @@ import uploadRoutes from './routes/upload'
 const app  = express()
 const PORT = process.env.PORT ?? 3001
 
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.FRONTEND_URL ?? '').split(',').map(s => s.trim()).filter(Boolean)
+  : ['http://localhost:5173', 'http://localhost:5174']
+
 app.use(cors({
-  origin:      process.env.NODE_ENV === 'production'
-    ? ['https://your-vercel-app.vercel.app']  // update at deploy time
-    : ['http://localhost:5173', 'http://localhost:5174'],
+  origin: allowedOrigins,
   credentials: true,
 }))
 
