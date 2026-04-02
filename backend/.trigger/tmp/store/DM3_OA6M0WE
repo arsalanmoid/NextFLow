@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../trigger.config.ts"],
+  "sourcesContent": ["import { defineConfig } from '@trigger.dev/sdk/v3'\n\nexport default defineConfig({\n  project: 'proj_voppvbefrhyamgbpkzrp',\n  dirs: ['src/trigger'],\n  maxDuration: 300,\n\n  retries: {\n    default: {\n      maxAttempts: 2,\n    },\n  },\n\n  build: {},\n})\nexport const resolveEnvVars = undefined;"],
+  "mappings": ";;;;;;;;;AAAA;AAEA,IAAO,yBAAQ,aAAa;AAAA,EAC1B,SAAS;AAAA,EACT,MAAM,CAAC,aAAa;AAAA,EACpB,aAAa;AAAA,EAEb,SAAS;AAAA,IACP,SAAS;AAAA,MACP,aAAa;AAAA,IACf;AAAA,EACF;AAAA,EAEA,OAAO,CAAC;AACV,CAAC;AACM,IAAM,iBAAiB;",
+  "names": []
+}

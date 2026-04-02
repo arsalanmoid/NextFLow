@@ -1,0 +1,499 @@
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import ReactFlow, {
+  Background,
+  MiniMap,
+  type NodeTypes,
+  BackgroundVariant,
+  useReactFlow,
+} from 'reactflow'
+import {
+  Undo2, Redo2, Plus, MousePointer2,
+  Hand, Scissors,
+  ChevronDown, Play, Download, FileUp,
+  ArrowLeft,
+} from 'lucide-react'
+import { useWorkflowStore } from '../store/workflowStore'
+import { useWorkflowApi } from '../hooks/useApi'
+import { useExecute } from '../hooks/useExecute'
+import { PresetSelector } from '../components/canvas/PresetSelector'
+import { LeftSidebar } from '../components/sidebar/LeftSidebar'
+import { RightSidebar } from '../components/sidebar/RightSidebar'
+import { TextNode } from '../components/nodes/TextNode'
+import { LLMNode } from '../components/nodes/LLMNode'
+import { UploadImageNode } from '../components/nodes/UploadImageNode'
+import { UploadVideoNode } from '../components/nodes/UploadVideoNode'
+import { CropImageNode } from '../components/nodes/CropImageNode'
+import { ExtractFrameNode } from '../components/nodes/ExtractFrameNode'
+import type { NodeType } from '../types'
+
+const nodeTypes: NodeTypes = {
+  textNode:         TextNode,
+  llmNode:          LLMNode,
+  uploadImageNode:  UploadImageNode,
+  uploadVideoNode:  UploadVideoNode,
+  cropImageNode:    CropImageNode,
+  extractFrameNode: ExtractFrameNode,
+}
+
+type Tool = 'select' | 'pan' | 'cut' | 'connect'
+
+export function WorkflowPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const isNew = id === 'new'
+
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [showPresets, setShowPresets] = useState(false)
+  const [showLogoMenu, setShowLogoMenu] = useState(false)
+  const nameRef = useRef<HTMLInputElement>(null)
+  const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const logoMenuRef = useRef<HTMLDivElement>(null)
+  const importRef = useRef<HTMLInputElement>(null)
+
+  const {
+    nodes, edges,
+    workflowName, currentWorkflowId,
+    activeTool,
+    onNodesChange, onEdgesChange, onConnect,
+    setWorkflowName, setActiveTool, setWorkflow,
+    setNodes, setEdges,
+    undo, redo,
+    addNode,
+  } = useWorkflowStore()
+
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: any) => {
+    if (activeTool !== 'cut') return
+    setEdges(edges.filter(e => e.id !== edge.id))
+  }, [activeTool, edges, setEdges])
+
+
+  const { getWorkflow, createWorkflow, updateWorkflow } = useWorkflowApi()
+  const { execute } = useExecute()
+  const isRunning = useWorkflowStore(s => s.isRunning)
+  const activeUploads = useWorkflowStore(s => s.activeUploads)
+
+  // Close logo menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (logoMenuRef.current && !logoMenuRef.current.contains(e.target as Node)) {
+        setShowLogoMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Load existing workflow from DB
+  useEffect(() => {
+    if (isNew || !id) return
+    getWorkflow(id)
+      .then(wf => {
+        setWorkflow({
+          id: wf.id,
+          name: wf.name,
+          nodes: wf.nodes as any,
+          edges: wf.edges as any,
+          createdAt: wf.createdAt,
+          updatedAt: wf.updatedAt,
+          runs: (wf.runs ?? []).map((r: any) => ({
+            ...r,
+            nodeResults: r.nodeResults as any[],
+          })),
+        })
+      })
+      .catch(err => {
+        console.error('Failed to load workflow:', err)
+        navigate('/dashboard')
+      })
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save: debounce 2s after any nodes/edges/name change
+  useEffect(() => {
+    if (isNew && nodes.length === 0) return
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const payload = { name: workflowName, nodes: nodes as any, edges: edges as any }
+        if (currentWorkflowId) {
+          await updateWorkflow(currentWorkflowId, payload)
+        } else if (nodes.length > 0) {
+          const created = await createWorkflow(payload)
+          useWorkflowStore.getState().setWorkflow({
+            ...created,
+            nodes: created.nodes as any,
+            edges: created.edges as any,
+            runs: [],
+          })
+          navigate(`/workflow/${created.id}`, { replace: true })
+        }
+      } catch (err) {
+        console.error('Auto-save failed:', err)
+      }
+    }, 2000)
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [nodes, edges, workflowName]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { screenToFlowPosition } = useReactFlow()
+
+  const onPaneDoubleClick = useCallback((e: React.MouseEvent) => {
+    if (showPresets) return
+    const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    addNode('textNode', { x: position.x - 130, y: position.y - 60 })
+  }, [addNode, showPresets, screenToFlowPosition])
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (showPresets) { if (e.key === 'Escape') setShowPresets(false); return }
+    if (e.key === 'n' || e.key === 'N') addNode('textNode', { x: 300 + Math.random() * 200, y: 200 + Math.random() * 100 })
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo() }
+  }, [addNode, undo, redo, showPresets])
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const type = e.dataTransfer.getData('application/nextflow-node') as NodeType
+    if (!type) return
+    const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    addNode(type, { x: position.x - 130, y: position.y - 60 })
+  }, [addNode, screenToFlowPosition])
+
+  const handleExport = useCallback(() => {
+    const data = JSON.stringify({ name: workflowName, nodes, edges }, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${workflowName.replace(/\s+/g, '_')}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [workflowName, nodes, edges])
+
+  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string)
+        if (data.nodes) setNodes(data.nodes)
+        if (data.edges) setEdges(data.edges)
+        if (data.name) setWorkflowName(data.name)
+      } catch (err) {
+        console.error('Invalid workflow JSON:', err)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }, [setNodes, setEdges, setWorkflowName])
+
+  const tools: { id: Tool; icon: React.ReactNode; title: string; label: string; shortcut: string }[] = [
+    { id: 'select',  icon: <MousePointer2 size={16} />, title: 'Select', label: 'Select', shortcut: 'V' },
+    { id: 'pan',     icon: <Hand size={16} />,          title: 'Pan',    label: 'Pan',    shortcut: 'H' },
+    { id: 'cut',     icon: <Scissors size={16} />,      title: 'Cut',    label: 'Cut',    shortcut: 'X' },
+  ]
+
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '8px 14px', fontSize: 13, color: 'rgba(255,255,255,0.75)',
+    cursor: 'pointer', borderRadius: 8, transition: 'background 0.1s',
+    background: 'transparent', border: 'none', width: '100%', textAlign: 'left',
+  }
+
+  return (
+    <div
+      className="w-full h-full flex outline-none"
+      style={{ background: '#0c0c0c', overflow: 'hidden' }}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+    >
+      {/* hidden import input */}
+      <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+
+      {/* ── Left sidebar ─────────────────────────────────── */}
+      <LeftSidebar />
+
+      {/* ── Canvas column (top bar + canvas + bottom bar) ── */}
+      <div className="flex-1 flex flex-col relative" style={{ overflow: 'hidden', minWidth: 0 }}>
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between pb-2 pointer-events-none" style={{ zIndex: 20, padding: '16px 20px 8px 16px' }}>
+          {/* LEFT — logo + name pill */}
+          <div className="pointer-events-auto relative flex items-center" ref={logoMenuRef}
+            style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 14, padding: '6px 8px', gap: 0 }}
+          >
+            {/* Logo + dropdown arrow — opens menu */}
+            <button
+              className="flex items-center gap-1.5 rounded-lg cursor-pointer select-none"
+              style={{
+                padding: '10px 8px 10px 12px', background: 'transparent', border: 'none',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              onClick={() => setShowLogoMenu(v => !v)}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6zm4 4h-2v-2h2v2zm0-4h-2V7h2v6z" fill="url(#nf-grad)"/>
+                <defs><linearGradient id="nf-grad" x1="2" y1="2" x2="22" y2="22"><stop stopColor="#a855f7"/><stop offset="1" stopColor="#3b82f6"/></linearGradient></defs>
+              </svg>
+              <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.35)', marginTop: 1 }} />
+            </button>
+
+            {/* Workflow name — click to rename */}
+            {isRenaming ? (
+              <input
+                ref={nameRef}
+                className="bg-transparent outline-none text-sm font-medium text-white"
+                style={{
+                  padding: '8px 10px 8px 6px', borderRadius: 10, width: 160,
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.05)',
+                }}
+                value={workflowName}
+                onChange={e => setWorkflowName(e.target.value)}
+                onBlur={() => setIsRenaming(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setIsRenaming(false) }}
+                autoFocus
+              />
+            ) : (
+              <button
+                className="rounded-lg cursor-pointer"
+                style={{
+                  padding: '8px 10px 8px 6px', background: 'transparent', border: 'none',
+                  fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '-0.01em',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={() => { setIsRenaming(true); setTimeout(() => nameRef.current?.select(), 50) }}
+              >
+                {workflowName}
+              </button>
+            )}
+
+            {showLogoMenu && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 12, padding: '6px 0', minWidth: 200, zIndex: 100,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              }}>
+                <button style={menuItemStyle}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => { setShowLogoMenu(false); navigate('/dashboard') }}
+                >
+                  <ArrowLeft size={15} style={{ color: 'rgba(255,255,255,0.5)' }} /> Back
+                </button>
+                <button style={menuItemStyle}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => { setShowLogoMenu(false); importRef.current?.click() }}
+                >
+                  <FileUp size={15} style={{ color: 'rgba(255,255,255,0.5)' }} /> Import
+                </button>
+                <button style={menuItemStyle}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => { setShowLogoMenu(false); handleExport() }}
+                >
+                  <Download size={15} style={{ color: 'rgba(255,255,255,0.5)' }} /> Export
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT */}
+          <div className="pointer-events-auto">
+            <button
+              onClick={() => execute('FULL')}
+              disabled={isRunning || nodes.length === 0 || activeUploads > 0}
+              className={`run-btn${isRunning ? ' run-btn--running' : ''} flex items-center gap-2 text-sm font-medium transition-all`}
+              style={{ color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 999 }}
+            >
+              <Play size={14} /> {isRunning ? 'Running...' : activeUploads > 0 ? 'Uploading...' : 'Run workflow'}
+            </button>
+          </div>
+        </div>
+
+        {/* Canvas */}
+        <div
+          className={`flex-1 relative${activeTool === 'pan' ? ' tool-pan' : ''}${activeTool === 'cut' ? ' tool-cut' : ''}`}
+          style={{ overflow: 'hidden' }}
+          ref={reactFlowWrapper}
+        >
+          <div className="grain-overlay" />
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onEdgeClick={onEdgeClick}
+            onDoubleClick={onPaneDoubleClick}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            fitView
+            minZoom={0.1}
+            maxZoom={2}
+            panOnDrag={activeTool === 'pan' && !showPresets}
+            selectionOnDrag={activeTool === 'select' && !showPresets}
+            deleteKeyCode={['Delete', 'Backspace']}
+            proOptions={{ hideAttribution: true }}
+            style={{ background: '#0c0c0c' }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.12)" />
+            {nodes.length === 0 && !showPresets && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-10">
+                <p className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Add a node</p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.18)' }}>
+                  Double click, right click, or press{' '}
+                  <kbd className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>N</kbd>
+                </p>
+              </div>
+            )}
+            <MiniMap position="bottom-right" style={{ bottom: 60, right: 16 }} nodeColor="#2a2a2a" maskColor="rgba(0,0,0,0.4)" />
+          </ReactFlow>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 flex items-end pointer-events-none" style={{ padding: '0 20px 20px 20px' }}>
+          <div className="pointer-events-auto flex items-center gap-2" style={{ marginLeft: 4 }}>
+            {/* Undo — square with rounded corners */}
+            <button
+              onClick={undo}
+              title="Undo"
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
+              style={{
+                width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8, color: '#fff', cursor: 'pointer', transition: 'background-color 0.25s ease-in-out',
+              }}
+            >
+              <Undo2 size={13} />
+            </button>
+
+            {/* Redo — square with rounded corners */}
+            <button
+              onClick={redo}
+              title="Redo"
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
+              style={{
+                width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8, color: '#fff', cursor: 'pointer', transition: 'background-color 0.25s ease-in-out',
+              }}
+            >
+              <Redo2 size={13} />
+            </button>
+
+            {/* Keyboard shortcuts — rectangle with rounded corners */}
+            <button
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1a1a1a')}
+              style={{
+                height: 34, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 7,
+                backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8, color: '#fff', cursor: 'pointer', transition: 'background-color 0.25s ease-in-out',
+                fontSize: 12, fontWeight: 400, letterSpacing: '-0.01em',
+                fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ fontSize: 13, lineHeight: 1, fontFamily: 'system-ui', color: '#fff' }}>⌘</span>
+              Keyboard shortcuts
+            </button>
+          </div>
+          <div className="pointer-events-auto relative flex items-center" style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20,
+            background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 14, padding: '5px 6px', gap: 2, display: 'flex',
+          }}>
+            {/* + button with tooltip */}
+            <div style={{ position: 'relative' }}
+              onMouseEnter={e => { const t = e.currentTarget.querySelector<HTMLElement>('.plus-tooltip'); if (t) t.style.opacity = '1' }}
+              onMouseLeave={e => { const t = e.currentTarget.querySelector<HTMLElement>('.plus-tooltip'); if (t) t.style.opacity = '0' }}
+            >
+              {/* PresetSelector panel */}
+              {showPresets && <PresetSelector onDismiss={() => setShowPresets(false)} />}
+              {/* Tooltip */}
+              <div className="plus-tooltip" style={{
+                position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                background: '#fff', border: 'none',
+                borderRadius: 8, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 7,
+                whiteSpace: 'nowrap', pointerEvents: 'none',
+                opacity: 0, transition: 'opacity 0.15s ease',
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#111', fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif' }}>New Node</span>
+              </div>
+              <button
+                onClick={() => setShowPresets(true)}
+                style={{
+                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'transparent', border: 'none',
+                  borderRadius: 9, color: '#fff', cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+
+            {/* Tool buttons */}
+            {tools.map(t => (
+              <div
+                key={t.id}
+                style={{ position: 'relative' }}
+                onMouseEnter={e => { const tip = e.currentTarget.querySelector<HTMLElement>('.tool-tooltip'); if (tip) tip.style.opacity = '1' }}
+                onMouseLeave={e => { const tip = e.currentTarget.querySelector<HTMLElement>('.tool-tooltip'); if (tip) tip.style.opacity = '0' }}
+              >
+                {/* Tooltip */}
+                <div className="tool-tooltip" style={{
+                  position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                  background: '#fff', border: 'none',
+                  borderRadius: 8, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 7,
+                  whiteSpace: 'nowrap', pointerEvents: 'none',
+                  opacity: 0, transition: 'opacity 0.15s ease',
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#111', fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif' }}>{t.label}</span>
+                </div>
+                <button
+                  onClick={() => setActiveTool(t.id as Tool)}
+                  data-active={activeTool === t.id ? 'true' : 'false'}
+                  onMouseEnter={e => { if (e.currentTarget.dataset.active !== 'true') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)' }}
+                  onMouseLeave={e => { if (e.currentTarget.dataset.active !== 'true') e.currentTarget.style.backgroundColor = activeTool === t.id ? 'rgba(255,255,255,0.15)' : 'transparent' }}
+                  style={{
+                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: activeTool === t.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    border: 'none', borderRadius: 9,
+                    color: activeTool === t.id ? '#fff' : 'rgba(255,255,255,0.5)',
+                    cursor: activeTool === t.id ? 'default' : 'pointer',
+                    transition: 'background-color 0.15s ease, color 0.15s ease',
+                  }}
+                >
+                  {t.icon}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right sidebar ─────────────────────────────────── */}
+      <RightSidebar />
+    </div>
+  )
+}

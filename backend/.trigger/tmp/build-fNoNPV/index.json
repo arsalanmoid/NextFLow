@@ -1,0 +1,56 @@
+{
+  "configPath": "D:\\NextFlow\\backend\\.trigger\\tmp\\build-fNoNPV\\trigger.config.mjs",
+  "customConditions": [
+  ],
+  "queues": [
+  ],
+  "runtime": "node",
+  "runtimeVersion": "20.15.0",
+  "tasks": [
+    {
+      "entryPoint": "D:\\NextFlow\\backend\\.trigger\\tmp\\build-fNoNPV\\crop-image-task.mjs",
+      "filePath": "src/trigger/crop-image-task.ts",
+      "id": "crop-image",
+      "maxDuration": 300,
+      "retry": {
+        "factor": 2,
+        "maxAttempts": 2,
+        "maxTimeoutInMs": 60000,
+        "minTimeoutInMs": 1000,
+        "randomize": true
+      }
+    },
+    {
+      "entryPoint": "D:\\NextFlow\\backend\\.trigger\\tmp\\build-fNoNPV\\extract-frame-task.mjs",
+      "filePath": "src/trigger/extract-frame-task.ts",
+      "id": "extract-frame",
+      "maxDuration": 300,
+      "retry": {
+        "factor": 2,
+        "maxAttempts": 2,
+        "maxTimeoutInMs": 60000,
+        "minTimeoutInMs": 1000,
+        "randomize": true
+      }
+    },
+    {
+      "entryPoint": "D:\\NextFlow\\backend\\.trigger\\tmp\\build-fNoNPV\\llm-task.mjs",
+      "filePath": "src/trigger/llm-task.ts",
+      "id": "llm-run",
+      "maxDuration": 300,
+      "retry": {
+        "factor": 2,
+        "maxAttempts": 2,
+        "maxTimeoutInMs": 60000,
+        "minTimeoutInMs": 1000,
+        "randomize": true
+      }
+    }
+  ],
+  "timings": {
+    "src/trigger/crop-image-task.ts": 35.301199999999994,
+    "src/trigger/extract-frame-task.ts": 4.156599999999912,
+    "src/trigger/llm-task.ts": 5.212500000000091
+  },
+  "workerEntryPoint": "D:\\NextFlow\\backend\\.trigger\\tmp\\build-fNoNPV\\dev-run-worker.mjs"
+}

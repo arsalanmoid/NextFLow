@@ -1,0 +1,164 @@
+@import "tailwindcss";
+@import "reactflow/dist/style.css";
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ── */
+body {
+  background: #0c0c0c;
+  color: #e5e7eb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* overflow handled per-page: dashboard scrolls, workflow canvas does not */
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Grain texture overlay on canvas ── */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  background-size: 300px 300px;
+}
+
+/* ── React Flow ── */
+.react-flow { background: #0c0c0c !important; }
+.react-flow__renderer { background: #0c0c0c !important; }
+/* dot grid shown via ReactFlow Background component */
+.react-flow__pane { cursor: default !important; }
+.tool-pan .react-flow__pane { cursor: grab !important; }
+.tool-pan .react-flow__pane:active { cursor: grabbing !important; }
+.tool-cut .react-flow__pane { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z'/%3E%3C/svg%3E") 0 24, crosshair !important; }
+.tool-cut .react-flow__edge-interaction { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='white' stroke='black' stroke-width='0.5' d='M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z'/%3E%3C/svg%3E") 0 24, pointer !important; }
+
+/* ── Edges ── */
+.react-flow__edge-path {
+  stroke: #1d4ed8 !important;
+  stroke-width: 2.5px !important;
+}
+.react-flow__edge-interaction { stroke-width: 16px !important; }
+.react-flow__connection-path {
+  stroke: #1d4ed8 !important;
+  stroke-width: 2.5px !important;
+}
+
+/* ── Handles ── */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(0,0,0,0.5) !important;
+  cursor: crosshair !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 10;
+}
+.react-flow__handle:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.1);
+}
+.react-flow__handle-connecting { transform: scale(1.4); }
+.react-flow__handle-valid { box-shadow: 0 0 0 3px rgba(34,197,94,0.4) !important; }
+
+/* Handle color classes */
+.handle-yellow { background: #eab308 !important; }
+.handle-blue   { background: #3b82f6 !important; }
+.handle-green  { background: #22c55e !important; }
+.handle-gray   { background: #6b7280 !important; }
+
+/* ── Node selection ── */
+.react-flow__node.selected .nf-node-card {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6, 0 0 16px rgba(59,130,246,0.25) !important;
+}
+
+/* ── Node running glow ── */
+.node-running .nf-node-card {
+  border-color: #eab308 !important;
+  animation: node-pulse-glow 1.5s ease-in-out infinite;
+}
+@keyframes node-pulse-glow {
+  0%,100% {
+    box-shadow: 0 0 0 1px #eab308;
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px #eab308,
+      0 0 12px 3px rgba(234,179,8,0.5),
+      0 0 30px 6px rgba(234,179,8,0.2);
+  }
+}
+
+/* ── Node success ── */
+.node-success .nf-node-card {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 1px #22c55e !important;
+}
+
+/* ── Node error ── */
+.node-error .nf-node-card {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+/* ── MiniMap ── */
+.react-flow__minimap {
+  background: #161616 !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+.react-flow__minimap-mask { fill: rgba(255,255,255,0.05) !important; }
+.react-flow__minimap-node { fill: #2a2a2a !important; }
+
+/* ── Controls ── */
+.react-flow__controls {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* ── Run workflow button glow ── */
+.run-btn {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  box-shadow:
+    0 0 12px 2px rgba(124,58,237,0.4),
+    0 0 24px 4px rgba(124,58,237,0.2);
+  transition: box-shadow 0.3s ease, transform 0.15s ease;
+}
+.run-btn:hover:not(:disabled) {
+  box-shadow:
+    0 0 18px 4px rgba(124,58,237,0.55),
+    0 0 36px 8px rgba(124,58,237,0.3);
+  transform: scale(1.03);
+}
+.run-btn:disabled {
+  box-shadow: none;
+  opacity: 0.4;
+}
+.run-btn--running {
+  background: linear-gradient(135deg, #eab308, #ca8a04) !important;
+  box-shadow:
+    0 0 12px 2px rgba(234,179,8,0.4),
+    0 0 24px 4px rgba(234,179,8,0.2);
+}
+
+/* ── Transitions ── */
+.sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1); }
