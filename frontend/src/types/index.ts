@@ -107,7 +107,7 @@ export const NODE_DEFAULTS: Record<NodeType, NodeData> = {
   textNode:         { text: '' },
   uploadImageNode:  {},
   uploadVideoNode:  {},
-  llmNode:          { model: 'gemini-2.5-flash' },
+  llmNode:          { model: 'gemini-2.5-flash-lite' },
   cropImageNode:    { xPercent: 0, yPercent: 0, widthPercent: 100, heightPercent: 100 },
   extractFrameNode: { timestamp: '0' },
 }

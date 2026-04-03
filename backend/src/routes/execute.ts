@@ -139,7 +139,7 @@ router.post('/', requireAuth, async (req, res) => {
               }
 
               const llmHandle = await llmTask.trigger({
-                model:        node.data?.model ?? 'gemini-2.0-flash',
+                model:        node.data?.model ?? 'gemini-2.5-flash-lite',
                 systemPrompt,
                 userMessage,
                 imageUrls:    imageUrls.length > 0 ? imageUrls : undefined,
