@@ -85,9 +85,15 @@ export function WorkflowPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Load existing workflow from DB
+  // Load existing workflow from DB (or reset for new)
   useEffect(() => {
-    if (isNew || !id) return
+    if (isNew || !id) {
+      setNodes([])
+      setEdges([])
+      setWorkflowName('Untitled')
+      useWorkflowStore.setState({ currentWorkflowId: null, runs: [] })
+      return
+    }
     getWorkflow(id)
       .then(wf => {
         setWorkflow({
