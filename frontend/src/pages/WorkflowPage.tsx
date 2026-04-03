@@ -11,7 +11,7 @@ import {
   Undo2, Redo2, Plus, MousePointer2,
   Hand, Scissors,
   ChevronDown, Play, Download, FileUp,
-  ArrowLeft,
+  ArrowLeft, Save,
 } from 'lucide-react'
 import { useWorkflowStore } from '../store/workflowStore'
 import { useWorkflowApi } from '../hooks/useApi'
@@ -48,7 +48,7 @@ export function WorkflowPage() {
   const [showLogoMenu, setShowLogoMenu] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const logoMenuRef = useRef<HTMLDivElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
 
@@ -109,34 +109,29 @@ export function WorkflowPage() {
       })
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save: debounce 2s after any nodes/edges/name change
-  useEffect(() => {
-    if (isNew && nodes.length === 0) return
-    if (activeUploads > 0) return
-
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(async () => {
-      try {
-        const payload = { name: workflowName, nodes: nodes as any, edges: edges as any }
-        if (currentWorkflowId) {
-          await updateWorkflow(currentWorkflowId, payload)
-        } else if (nodes.length > 0) {
-          const created = await createWorkflow(payload)
-          useWorkflowStore.getState().setWorkflow({
-            ...created,
-            nodes: created.nodes as any,
-            edges: created.edges as any,
-            runs: [],
-          })
-          navigate(`/workflow/${created.id}`, { replace: true })
-        }
-      } catch (err) {
-        console.error('Auto-save failed:', err)
+  const handleSave = useCallback(async () => {
+    if (isSaving || nodes.length === 0 || activeUploads > 0) return
+    setIsSaving(true)
+    try {
+      const payload = { name: workflowName, nodes: nodes as any, edges: edges as any }
+      if (currentWorkflowId) {
+        await updateWorkflow(currentWorkflowId, payload)
+      } else {
+        const created = await createWorkflow(payload)
+        useWorkflowStore.getState().setWorkflow({
+          ...created,
+          nodes: created.nodes as any,
+          edges: created.edges as any,
+          runs: [],
+        })
+        navigate(`/workflow/${created.id}`, { replace: true })
       }
-    }, 2000)
-
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
-  }, [nodes, edges, workflowName]) // eslint-disable-line react-hooks/exhaustive-deps
+    } catch (err) {
+      console.error('Save failed:', err)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [isSaving, nodes, edges, workflowName, currentWorkflowId, activeUploads, updateWorkflow, createWorkflow, navigate])
 
   const { screenToFlowPosition } = useReactFlow()
 
@@ -313,14 +308,30 @@ export function WorkflowPage() {
           </div>
 
           {/* RIGHT */}
-          <div className="pointer-events-auto">
+          <div className="pointer-events-auto flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={isSaving || nodes.length === 0 || activeUploads > 0}
+              className="flex items-center gap-2 text-sm font-medium transition-all"
+              style={{
+                color: 'rgba(255,255,255,0.7)', border: 'none',
+                padding: '10px 18px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.06)',
+                cursor: isSaving || nodes.length === 0 || activeUploads > 0 ? 'not-allowed' : 'pointer',
+                opacity: isSaving || nodes.length === 0 ? 0.5 : 1,
+              }}
+              onMouseEnter={e => { if (!isSaving && nodes.length > 0 && activeUploads === 0) e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+            >
+              <Save size={14} /> {isSaving ? 'Saving...' : activeUploads > 0 ? 'Uploading...' : 'Save'}
+            </button>
             <button
               onClick={() => execute('FULL')}
               disabled={isRunning || nodes.length === 0 || activeUploads > 0}
               className={`run-btn${isRunning ? ' run-btn--running' : ''} flex items-center gap-2 text-sm font-medium transition-all`}
               style={{ color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 999 }}
             >
-              <Play size={14} /> {isRunning ? 'Running...' : activeUploads > 0 ? 'Uploading...' : 'Run workflow'}
+              <Play size={14} /> {isRunning ? 'Running...' : 'Run workflow'}
             </button>
           </div>
         </div>
