@@ -112,6 +112,7 @@ export function WorkflowPage() {
   // Auto-save: debounce 2s after any nodes/edges/name change
   useEffect(() => {
     if (isNew && nodes.length === 0) return
+    if (activeUploads > 0) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(async () => {
