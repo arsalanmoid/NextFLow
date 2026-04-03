@@ -143,8 +143,7 @@ export function WorkflowPage() {
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (showPresets) { if (e.key === 'Escape') setShowPresets(false); return }
-    if (e.key === 'n' || e.key === 'N') addNode('textNode', { x: 300 + Math.random() * 200, y: 200 + Math.random() * 100 })
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
+if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo() }
   }, [addNode, undo, redo, showPresets])
 
@@ -368,8 +367,7 @@ export function WorkflowPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-10">
                 <p className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Add a node</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.18)' }}>
-                  Double click, right click, or press{' '}
-                  <kbd className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>N</kbd>
+                  Double click or right click
                 </p>
               </div>
             )}
