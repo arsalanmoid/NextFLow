@@ -330,6 +330,20 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
             >
               <Save size={14} /> {isSaving ? 'Saving...' : activeUploads > 0 ? 'Uploading...' : 'Save'}
             </button>
+            {nodes.some(n => n.selected) && !isRunning && (
+              <button
+                onClick={() => execute('PARTIAL', nodes.filter(n => n.selected).map(n => n.id))}
+                disabled={activeUploads > 0}
+                className="flex items-center gap-2 text-sm font-medium"
+                style={{
+                  color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)',
+                  padding: '10px 18px', borderRadius: 999,
+                  background: 'rgba(168,85,247,0.1)', cursor: 'pointer',
+                }}
+              >
+                <Play size={14} /> Run Selected
+              </button>
+            )}
             <button
               onClick={() => execute('FULL')}
               disabled={isRunning || nodes.length === 0 || activeUploads > 0}

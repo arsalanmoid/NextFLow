@@ -18,7 +18,7 @@ export function ExtractFrameNode({ id, data }: NodeProps<ExtractFrameNodeData>) 
     : undefined
 
   return (
-    <NodeCard title="Extract Frame" cuCost={2} executionStatus={data.executionStatus} previewContent={preview}>
+    <NodeCard nodeId={id} title="Extract Frame" cuCost={2} executionStatus={data.executionStatus} previewContent={preview}>
       {/* Input handle */}
       <Handle type="target" position={Position.Left} id="video_url"
         className="handle-blue" style={{ top: '50%' }} title="video_url"

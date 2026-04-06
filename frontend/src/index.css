@@ -78,6 +78,10 @@ body {
 .handle-gray   { background: #6b7280 !important; }
 
 /* ── Node selection ── */
+.nf-node-wrapper:hover .node-run-btn {
+  opacity: 1 !important;
+}
+
 .react-flow__node.selected .nf-node-card {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 1px #3b82f6, 0 0 16px rgba(59,130,246,0.25) !important;

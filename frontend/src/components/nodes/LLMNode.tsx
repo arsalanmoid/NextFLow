@@ -45,6 +45,7 @@ export function LLMNode({ id, data }: NodeProps<LLMNodeData>) {
 
   return (
     <NodeCard
+      nodeId={id}
       title="Run LLM"
       cuCost={6}
       executionStatus={data.executionStatus}

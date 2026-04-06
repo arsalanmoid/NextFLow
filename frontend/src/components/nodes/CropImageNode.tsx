@@ -40,7 +40,7 @@ export function CropImageNode({ id, data }: NodeProps<CropImageNodeData>) {
     : undefined
 
   return (
-    <NodeCard title="Crop Image" cuCost={2} executionStatus={data.executionStatus} previewContent={preview}>
+    <NodeCard nodeId={id} title="Crop Image" cuCost={2} executionStatus={data.executionStatus} previewContent={preview}>
       {/* Input handle */}
       <Handle type="target" position={Position.Left} id="image_url"
         className="handle-blue" style={{ top: '50%' }} title="image_url"

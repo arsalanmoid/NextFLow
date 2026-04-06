@@ -1,6 +1,9 @@
-import { Info } from 'lucide-react'
+import { Info, Play } from 'lucide-react'
+import { useExecute } from '../../hooks/useExecute'
+import { useWorkflowStore } from '../../store/workflowStore'
 
 interface NodeCardProps {
+  nodeId?: string
   title: string
   cuCost?: number
   executionStatus?: 'idle' | 'running' | 'success' | 'error'
@@ -9,19 +12,45 @@ interface NodeCardProps {
 }
 
 export function NodeCard({
+  nodeId,
   title,
   cuCost = 1,
   executionStatus = 'idle',
   previewContent,
   children,
 }: NodeCardProps) {
+  const { execute } = useExecute()
+  const isRunning = useWorkflowStore(s => s.isRunning)
+  const currentWorkflowId = useWorkflowStore(s => s.currentWorkflowId)
+
   const statusClass =
     executionStatus === 'running' ? 'node-running' :
     executionStatus === 'success' ? 'node-success'  :
     executionStatus === 'error'   ? 'node-error'    : ''
 
   return (
-    <div className={statusClass} style={{ position: 'relative' }}>
+    <div className={`${statusClass} nf-node-wrapper`} style={{ position: 'relative' }}>
+      {/* Per-node run button — appears above card on hover */}
+      {nodeId && currentWorkflowId && (
+        <button
+          className="nodrag node-run-btn"
+          onClick={() => execute('SINGLE', [nodeId])}
+          disabled={isRunning}
+          title="Run this node"
+          style={{
+            position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '3px 10px', borderRadius: 999, border: 'none',
+            background: 'rgba(168,85,247,0.85)', color: '#fff',
+            fontSize: 11, fontWeight: 500,
+            cursor: isRunning ? 'not-allowed' : 'pointer',
+            opacity: 0, transition: 'opacity 0.15s',
+            whiteSpace: 'nowrap', zIndex: 10,
+          }}
+        >
+          <Play size={9} /> Run
+        </button>
+      )}
       {/* Card */}
       <div
         className="nf-node-card"
