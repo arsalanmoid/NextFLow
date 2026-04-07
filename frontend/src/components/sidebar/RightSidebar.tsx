@@ -121,7 +121,7 @@ const MAX_WIDTH = 320
 const EXPANDED_THRESHOLD = 100
 
 export function RightSidebar() {
-  const [width, setWidth] = useState(260)
+  const [width, setWidth] = useState(MIN_WIDTH)
   const runs = useWorkflowStore(s => s.runs)
   const dragging = useRef(false)
   const startX = useRef(0)
