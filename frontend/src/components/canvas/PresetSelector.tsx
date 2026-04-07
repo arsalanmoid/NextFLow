@@ -62,7 +62,7 @@ export function PresetSelector({ onDismiss }: Props) {
         ref={ref}
         style={{
           width: 220,
-          background: '#1a1a1a',
+          background: '#0b0b0b',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 14,
           overflow: 'hidden',

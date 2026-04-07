@@ -213,7 +213,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
   return (
     <div
       className="w-full h-full flex outline-none"
-      style={{ background: isDark ? '#0c0c0c' : '#f0f0f0', overflow: 'hidden' }}
+      style={{ background: isDark ? '#101010' : '#f0f0f0', overflow: 'hidden' }}
       tabIndex={0}
       onKeyDown={onKeyDown}
     >
@@ -387,7 +387,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
             selectionOnDrag={activeTool === 'select' && !showPresets}
             deleteKeyCode={['Delete', 'Backspace']}
             proOptions={{ hideAttribution: true }}
-            style={{ background: isDark ? '#0c0c0c' : '#f0f0f0' }}
+            style={{ background: isDark ? '#101010' : '#f0f0f0' }}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={isDark ? 'rgba(100,100,100,0.4)' : 'rgba(0,0,0,0.2)'} />
             {nodes.length === 0 && !showPresets && (

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import { ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { useWorkflowStore } from '../../store/workflowStore'
 import type { WorkflowRun } from '../../types'
 
@@ -87,7 +87,7 @@ function RunEntry({ run, index }: { run: WorkflowRun; index: number }) {
             <div key={nr.nodeId} style={{ paddingTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
-                  {i === run.nodeResults.length - 1 ? '└─' : '├─'}
+                  {i === run.nodeResults.length - 1 ? '└' : '├'}
                 </span>
                 <span style={{ fontSize: 11, color: '#e5e7eb', fontWeight: 500 }}>
                   {nr.nodeType.replace('Node', '').replace(/([A-Z])/g, ' $1').trim()} ({nr.nodeId})
@@ -100,12 +100,12 @@ function RunEntry({ run, index }: { run: WorkflowRun; index: number }) {
               </div>
               {nr.output != null && (
                 <div style={{ marginLeft: 18, marginTop: 3, fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>
-                  └─ Output: "{String(nr.output).slice(0, 80)}{String(nr.output).length > 80 ? '…' : ''}"
+                  └ Output: "{String(nr.output).slice(0, 80)}{String(nr.output).length > 80 ? '…' : ''}"
                 </div>
               )}
               {nr.error && (
                 <div style={{ marginLeft: 18, marginTop: 3, fontSize: 10, color: '#ef4444' }}>
-                  └─ Error: {nr.error}
+                  └ Error: {nr.error}
                 </div>
               )}
             </div>
@@ -116,60 +116,60 @@ function RunEntry({ run, index }: { run: WorkflowRun; index: number }) {
   )
 }
 
+const MIN_WIDTH = 36
+const MAX_WIDTH = 320
+const EXPANDED_THRESHOLD = 100
+
 export function RightSidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [width, setWidth] = useState(260)
   const runs = useWorkflowStore(s => s.runs)
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startW = useRef(0)
+
+  const isExpanded = width > EXPANDED_THRESHOLD
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    startX.current = e.clientX
+    startW.current = width
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current) return
+      const delta = startX.current - ev.clientX
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW.current + delta))
+      setWidth(next)
+    }
+    const onUp = () => {
+      dragging.current = false
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [width])
 
   return (
     <div
-      className="sidebar-transition"
       style={{
-        width: collapsed ? 36 : 260,
-        minWidth: collapsed ? 36 : 260,
+        width,
+        minWidth: width,
         height: '100%',
-        background: '#0c0c0c',
-        borderLeft: '1px solid rgba(255,255,255,0.06)',
+        background: '#000000',
+        borderLeft: '1px solid rgba(255,255,255,0.08)',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         zIndex: 10,
         overflow: 'hidden',
+        userSelect: 'none',
+        flexShrink: 0,
       }}
     >
-      {collapsed ? (
-        <div style={{ padding: '10px 6px' }}>
-          <button
-            onClick={() => setCollapsed(false)}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-            style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 6, color: 'rgba(255,255,255,0.5)', padding: '3px 5px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center',
-              transition: 'background 0.2s ease',
-            }}
-          >
-            <ChevronLeft size={13} />
-          </button>
-        </div>
-      ) : (
+      {isExpanded ? (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px 8px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <button
-              onClick={() => setCollapsed(true)}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 6, color: 'rgba(255,255,255,0.5)',
-                padding: '3px 5px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', flexShrink: 0,
-                transition: 'background 0.2s ease',
-              }}
-            >
-              <ChevronRight size={13} />
-            </button>
+          <div style={{ padding: '14px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '-0.01em', fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif' }}>
               Run History
             </p>
@@ -178,8 +178,8 @@ export function RightSidebar() {
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 8px' }}>
             {runs.length === 0 ? (
               <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)' }}>No runs yet</p>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', marginTop: 6, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>No runs yet</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6, lineHeight: 1.5 }}>
                   Click Run to execute the workflow
                 </p>
               </div>
@@ -190,8 +190,18 @@ export function RightSidebar() {
             )}
           </div>
         </>
-      )}
+      ) : null}
+
+      {/* Drag handle — left edge */}
+      <div
+        onMouseDown={onMouseDown}
+        style={{
+          position: 'absolute', top: 0, left: 0, width: 4, height: '100%',
+          cursor: 'col-resize', zIndex: 20,
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+      />
     </div>
   )
 }
-
