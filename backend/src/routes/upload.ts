@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth'
 import { uploadToTransloadit } from '../lib/transloadit'
 
 const router = Router()
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } }) // 100 MB
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } }) // 500 MB
 
 // POST /api/upload — upload a file to Transloadit, return CDN URL
 router.post('/', requireAuth, upload.single('file'), async (req, res) => {

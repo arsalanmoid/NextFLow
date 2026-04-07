@@ -25,28 +25,46 @@ export const extractFrameTask = task({
       const buffer = Buffer.from(await res.arrayBuffer())
       writeFileSync(inputPath, buffer)
 
-      // Resolve timestamp
+      // Always get video duration first
       const ffprobe = process.env.FFPROBE_PATH ?? 'ffprobe'
       const ffmpeg  = process.env.FFMPEG_PATH  ?? 'ffmpeg'
+      const durationStr = execSync(
+        `"${ffprobe}" -v error -show_entries format=duration -of csv=p=0 "${inputPath}"`,
+        { encoding: 'utf-8' }
+      ).trim()
+      const duration = parseFloat(durationStr)
+      console.log('Video duration:', duration)
+
+      // Resolve timestamp
       let seekSec: number
       if (payload.timestamp.includes('%')) {
-        // Get video duration
-        const durationStr = execSync(
-          `"${ffprobe}" -v error -show_entries format=duration -of csv=p=0 "${inputPath}"`,
-          { encoding: 'utf-8' }
-        ).trim()
-        const duration = parseFloat(durationStr)
         const pct = parseFloat(payload.timestamp.replace('%', ''))
         seekSec = (pct / 100) * duration
       } else {
         seekSec = parseFloat(payload.timestamp) || 0
       }
 
+      // Clamp to video duration (leave 0.5s buffer before end)
+      seekSec = Math.min(seekSec, Math.max(0, duration - 0.5))
+      console.log('Seeking to:', seekSec)
+
       // FFmpeg extract frame
-      execSync(
-        `"${ffmpeg}" -y -ss ${seekSec} -i "${inputPath}" -frames:v 1 -q:v 2 "${outputPath}"`,
-        { encoding: 'utf-8', stdio: 'pipe' }
-      )
+      try {
+        execSync(
+          `"${ffmpeg}" -y -ss ${seekSec} -i "${inputPath}" -frames:v 1 -q:v 2 "${outputPath}"`,
+          { encoding: 'utf-8', stdio: 'pipe' }
+        )
+      } catch (e: any) {
+        console.error('FFmpeg stderr:', e.stderr)
+        console.error('FFmpeg stdout:', e.stdout)
+        throw new Error(`FFmpeg failed: ${e.stderr ?? e.message}`)
+      }
+
+      // Verify output was produced
+      const { existsSync } = await import('fs')
+      if (!existsSync(outputPath)) {
+        throw new Error(`FFmpeg did not produce output frame at timestamp ${seekSec}s`)
+      }
 
       // Upload extracted frame to Transloadit
       const frame = readFileSync(outputPath)

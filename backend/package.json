@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@clerk/express": "^2.0.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
     "@google/generative-ai": "^0.21.0",
     "@prisma/client": "^5.22.0",
     "@trigger.dev/sdk": "4.4.3",
@@ -26,6 +28,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@trigger.dev/build": "4.4.3",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/form-data": "^2.5.2",
