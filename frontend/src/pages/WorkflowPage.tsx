@@ -46,6 +46,8 @@ export function WorkflowPage() {
   const [isRenaming, setIsRenaming] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
   const [showLogoMenu, setShowLogoMenu] = useState(false)
+  const theme = (localStorage.getItem('nf-theme') as 'dark' | 'light') ?? 'dark'
+  const isDark = theme === 'dark'
   const nameRef = useRef<HTMLInputElement>(null)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -211,7 +213,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
   return (
     <div
       className="w-full h-full flex outline-none"
-      style={{ background: '#0c0c0c', overflow: 'hidden' }}
+      style={{ background: isDark ? '#0c0c0c' : '#f0f0f0', overflow: 'hidden' }}
       tabIndex={0}
       onKeyDown={onKeyDown}
     >
@@ -222,13 +224,13 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
       <LeftSidebar />
 
       {/* ── Canvas column (top bar + canvas + bottom bar) ── */}
-      <div className="flex-1 flex flex-col relative" style={{ overflow: 'hidden', minWidth: 0 }}>
+      <div className="flex-1 relative" style={{ overflow: 'hidden', minWidth: 0 }}>
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between pb-2 pointer-events-none" style={{ zIndex: 20, padding: '16px 20px 8px 16px' }}>
+        {/* Top bar — floats over canvas */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between pb-2 pointer-events-none" style={{ zIndex: 20, padding: '16px 20px 8px 16px' }}>
           {/* LEFT — logo + name pill */}
           <div className="pointer-events-auto relative flex items-center" ref={logoMenuRef}
-            style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 14, padding: '6px 8px', gap: 0 }}
+            style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '6px 8px', gap: 0 }}
           >
             {/* Logo + dropdown arrow — opens menu */}
             <button
@@ -242,8 +244,13 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
               onClick={() => setShowLogoMenu(v => !v)}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6zm4 4h-2v-2h2v2zm0-4h-2V7h2v6z" fill="url(#nf-grad)"/>
-                <defs><linearGradient id="nf-grad" x1="2" y1="2" x2="22" y2="22"><stop stopColor="#a855f7"/><stop offset="1" stopColor="#3b82f6"/></linearGradient></defs>
+                <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#nf-bg)" />
+                <rect x="4" y="4" width="8" height="8" rx="2.5" fill="white" fillOpacity="0.95" />
+                <rect x="13" y="13" width="7" height="7" rx="2" fill="white" fillOpacity="0.8" />
+                <path d="M10 10C12 12 13 13.5 14.5 14.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.7" />
+                <defs>
+                  <linearGradient id="nf-bg" x1="1" y1="1" x2="23" y2="23"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#2563eb"/></linearGradient>
+                </defs>
               </svg>
               <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.35)', marginTop: 1 }} />
             </button>
@@ -319,14 +326,14 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
               disabled={isSaving || nodes.length === 0 || activeUploads > 0}
               className="flex items-center gap-2 text-sm font-medium transition-all"
               style={{
-                color: 'rgba(255,255,255,0.7)', border: 'none',
+                color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)',
                 padding: '10px 18px', borderRadius: 999,
-                background: 'rgba(255,255,255,0.06)',
+                background: '#1a1a1a',
                 cursor: isSaving || nodes.length === 0 || activeUploads > 0 ? 'not-allowed' : 'pointer',
                 opacity: isSaving || nodes.length === 0 ? 0.5 : 1,
               }}
               onMouseEnter={e => { if (!isSaving && nodes.length > 0 && activeUploads === 0) e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#1a1a1a')}
             >
               <Save size={14} /> {isSaving ? 'Saving...' : activeUploads > 0 ? 'Uploading...' : 'Save'}
             </button>
@@ -355,9 +362,9 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
           </div>
         </div>
 
-        {/* Canvas */}
+        {/* Canvas — fills full column */}
         <div
-          className={`flex-1 relative${activeTool === 'pan' ? ' tool-pan' : ''}${activeTool === 'cut' ? ' tool-cut' : ''}`}
+          className={`absolute inset-0${activeTool === 'pan' ? ' tool-pan' : ''}${activeTool === 'cut' ? ' tool-cut' : ''}`}
           style={{ overflow: 'hidden' }}
           ref={reactFlowWrapper}
         >
@@ -380,13 +387,13 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
             selectionOnDrag={activeTool === 'select' && !showPresets}
             deleteKeyCode={['Delete', 'Backspace']}
             proOptions={{ hideAttribution: true }}
-            style={{ background: '#0c0c0c' }}
+            style={{ background: isDark ? '#0c0c0c' : '#f0f0f0' }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.12)" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={isDark ? 'rgba(100,100,100,0.4)' : 'rgba(0,0,0,0.2)'} />
             {nodes.length === 0 && !showPresets && (
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-10">
-                <p className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Add a node</p>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.18)' }}>
+                <p className="text-sm font-medium mb-1" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>Add a node</p>
+                <p className="text-xs" style={{ color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)' }}>
                   Double click or right click
                 </p>
               </div>
@@ -448,7 +455,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
           <div className="pointer-events-auto relative flex items-center" style={{
             position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20,
             background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 14, padding: '5px 6px', gap: 2, display: 'flex',
+            borderRadius: 14, padding: '7px 14px', gap: 4, display: 'flex',
           }}>
             {/* + button with tooltip */}
             <div style={{ position: 'relative' }}
@@ -504,14 +511,14 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
                   onClick={() => setActiveTool(t.id as Tool)}
                   data-active={activeTool === t.id ? 'true' : 'false'}
                   onMouseEnter={e => { if (e.currentTarget.dataset.active !== 'true') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)' }}
-                  onMouseLeave={e => { if (e.currentTarget.dataset.active !== 'true') e.currentTarget.style.backgroundColor = activeTool === t.id ? 'rgba(255,255,255,0.15)' : 'transparent' }}
+                  onMouseLeave={e => { if (e.currentTarget.dataset.active !== 'true') e.currentTarget.style.backgroundColor = 'transparent' }}
                   style={{
                     width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     backgroundColor: activeTool === t.id ? 'rgba(255,255,255,0.15)' : 'transparent',
                     border: 'none', borderRadius: 9,
-                    color: activeTool === t.id ? '#fff' : 'rgba(255,255,255,0.5)',
-                    cursor: activeTool === t.id ? 'default' : 'pointer',
-                    transition: 'background-color 0.15s ease, color 0.15s ease',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease',
                   }}
                 >
                   {t.icon}

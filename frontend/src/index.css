@@ -34,8 +34,8 @@ body {
 }
 
 /* ── React Flow ── */
-.react-flow { background: #0c0c0c !important; }
-.react-flow__renderer { background: #0c0c0c !important; }
+.react-flow { background: transparent !important; }
+.react-flow__renderer { background: transparent !important; }
 /* dot grid shown via ReactFlow Background component */
 .react-flow__pane { cursor: default !important; }
 .tool-pan .react-flow__pane { cursor: grab !important; }
@@ -87,10 +87,16 @@ body {
   box-shadow: 0 0 0 1px #3b82f6, 0 0 16px rgba(59,130,246,0.25) !important;
 }
 
+/* ── Node card base transition (smooth glow fade-out) ── */
+.nf-node-card {
+  transition: border-color 0.6s ease, box-shadow 0.6s ease;
+}
+
 /* ── Node running glow ── */
 .node-running .nf-node-card {
   border-color: #eab308 !important;
   animation: node-pulse-glow 1.5s ease-in-out infinite;
+  transition: none;
 }
 @keyframes node-pulse-glow {
   0%,100% {
@@ -101,6 +107,24 @@ body {
       0 0 0 1px #eab308,
       0 0 12px 3px rgba(234,179,8,0.5),
       0 0 30px 6px rgba(234,179,8,0.2);
+  }
+}
+
+/* ── Node glow fade-out ── */
+.node-glow-fade .nf-node-card {
+  animation: node-glow-fadeout 0.6s ease-out forwards;
+}
+@keyframes node-glow-fadeout {
+  0% {
+    box-shadow:
+      0 0 0 1px #eab308,
+      0 0 12px 3px rgba(234,179,8,0.5),
+      0 0 30px 6px rgba(234,179,8,0.2);
+    border-color: #eab308;
+  }
+  100% {
+    box-shadow: none;
+    border-color: rgba(255,255,255,0.08);
   }
 }
 

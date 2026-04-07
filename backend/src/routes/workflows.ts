@@ -56,7 +56,7 @@ router.post('/', requireAuth, async (req, res) => {
       data: {
         userId: userId!,
         name:   parsed.data.name,
-        nodes:  parsed.data.nodes as any,
+        nodes:  parsed.data.nodes as any, 
         edges:  parsed.data.edges as any,
       },
     })

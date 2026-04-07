@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Info, Play } from 'lucide-react'
 import { useExecute } from '../../hooks/useExecute'
 import { useWorkflowStore } from '../../store/workflowStore'
@@ -23,13 +24,25 @@ export function NodeCard({
   const isRunning = useWorkflowStore(s => s.isRunning)
   const currentWorkflowId = useWorkflowStore(s => s.currentWorkflowId)
 
+  const prevStatus = useRef(executionStatus)
+  const [fadingOut, setFadingOut] = useState(false)
+
+  useEffect(() => {
+    if (prevStatus.current === 'running' && executionStatus !== 'running') {
+      setFadingOut(true)
+      const timer = setTimeout(() => setFadingOut(false), 600)
+      return () => clearTimeout(timer)
+    }
+    prevStatus.current = executionStatus
+  }, [executionStatus])
+
   const statusClass =
     executionStatus === 'running' ? 'node-running' :
     executionStatus === 'success' ? 'node-success'  :
     executionStatus === 'error'   ? 'node-error'    : ''
 
   return (
-    <div className={`${statusClass} nf-node-wrapper`} style={{ position: 'relative' }}>
+    <div className={`${statusClass}${fadingOut ? ' node-glow-fade' : ''} nf-node-wrapper`} style={{ position: 'relative' }}>
       {/* Per-node run button — appears above card on hover */}
       {nodeId && currentWorkflowId && (
         <button
