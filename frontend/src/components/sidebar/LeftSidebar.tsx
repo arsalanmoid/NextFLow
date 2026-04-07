@@ -4,7 +4,7 @@ import { Search, Type, Image, Video, Brain, Crop, Film } from 'lucide-react'
 import { useWorkflowStore } from '../../store/workflowStore'
 import type { NodeType } from '../../types'
 
-const font = '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif'
+const font = '"Suisse Intl", ui-sans-serif, system-ui, sans-serif'
 
 const NODE_ITEMS: { type: NodeType; label: string; icon: React.ReactNode; description: string; color: string }[] = [
   { type: 'textNode',         label: 'Text',          icon: <Type size={15} />,   description: 'Text input / prompt',  color: '#a78bfa' },
@@ -139,7 +139,7 @@ export function LeftSidebar() {
               CATEGORIES.map(cat => (
                 <div key={cat.label} style={{ marginBottom: 10 }}>
                   <p style={{
-                    fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)',
+                    fontSize: 10, fontWeight: 450, color: '#808080',
                     letterSpacing: '0.07em', textTransform: 'uppercase',
                     padding: '6px 8px 4px', fontFamily: font,
                   }}>
@@ -209,26 +209,19 @@ function NodeItem({
       draggable
       onClick={() => onClick(item.type)}
       onDragStart={e => onDragStart(e, item.type)}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'transparent'
-        e.currentTarget.style.borderColor = 'transparent'
-      }}
+      onMouseEnter={e => (e.currentTarget.style.background = '#262626')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '7px 8px', borderRadius: 8, marginBottom: 1,
         cursor: 'grab', userSelect: 'none',
         background: 'transparent',
-        border: '1px solid transparent',
-        transition: 'background 0.15s ease, border-color 0.15s ease',
+        transition: 'background 0.15s ease',
       }}
     >
       <div style={{
         width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-        background: `${item.color}15`,
+        background: '#1a1a1a',
         border: `1px solid ${item.color}30`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: item.color,
@@ -236,8 +229,7 @@ function NodeItem({
         {item.icon}
       </div>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', fontFamily: font, lineHeight: 1.3 }}>{item.label}</p>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 1, fontFamily: font, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</p>
+        <p style={{ fontSize: 12, fontWeight: 450, color: '#dbdee4', fontFamily: font, lineHeight: 1.3 }}>{item.label}</p>
       </div>
     </div>
   )
