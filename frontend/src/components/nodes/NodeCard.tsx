@@ -26,7 +26,6 @@ export function NodeCard({
 }: NodeCardProps) {
   const { execute } = useExecute()
   const isRunning = useWorkflowStore(s => s.isRunning)
-  const currentWorkflowId = useWorkflowStore(s => s.currentWorkflowId)
 
   const prevStatus = useRef(executionStatus)
   const [fadingOut, setFadingOut] = useState(false)
