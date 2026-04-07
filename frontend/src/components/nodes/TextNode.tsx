@@ -30,7 +30,7 @@ export function TextNode({ id, data }: NodeProps<TextNodeData>) {
   )
 
   return (
-    <NodeCard title="Text" cuCost={0} previewContent={textArea}>
+    <NodeCard title="Text" cuCost={0} previewContent={textArea} previewHeight={220} cardWidth={200}>
       {/* Output handle — right side, blue */}
       <Handle
         type="source"

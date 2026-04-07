@@ -247,15 +247,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               onClick={() => setShowLogoMenu(v => !v)}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#nf-bg)" />
-                <rect x="4" y="4" width="8" height="8" rx="2.5" fill="white" fillOpacity="0.95" />
-                <rect x="13" y="13" width="7" height="7" rx="2" fill="white" fillOpacity="0.8" />
-                <path d="M10 10C12 12 13 13.5 14.5 14.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.7" />
-                <defs>
-                  <linearGradient id="nf-bg" x1="1" y1="1" x2="23" y2="23"><stop stopColor="#38bdf8"/><stop offset="1" stopColor="#2563eb"/></linearGradient>
-                </defs>
-              </svg>
+              <img src="https://www.krea.ai/api/img?f=webp&i=https%3A%2F%2Fs.krea.ai%2Ficons%2FNodeEditor.png&s=256" alt="Node Editor" style={{ width: 22, height: 22, borderRadius: 5 }} />
               <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.35)', marginTop: 1 }} />
             </button>
 
@@ -332,7 +324,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
               className="flex items-center gap-2 text-sm font-medium transition-all"
               style={{
                 color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)',
-                padding: '10px 18px', borderRadius: 999,
+                padding: '8px 14px', borderRadius: 8,
                 background: '#1a1a1a',
                 cursor: isSaving || nodes.length === 0 || activeUploads > 0 ? 'not-allowed' : 'pointer',
                 opacity: isSaving || nodes.length === 0 ? 0.5 : 1,
@@ -349,7 +341,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
                 className="flex items-center gap-2 text-sm font-medium"
                 style={{
                   color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)',
-                  padding: '10px 18px', borderRadius: 999,
+                  padding: '8px 14px', borderRadius: 8,
                   background: 'rgba(168,85,247,0.1)', cursor: 'pointer',
                 }}
               >
@@ -360,7 +352,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
               onClick={() => execute('FULL')}
               disabled={isRunning || nodes.length === 0 || activeUploads > 0}
               className={`run-btn${isRunning ? ' run-btn--running' : ''} flex items-center gap-2 text-sm font-medium transition-all`}
-              style={{ color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 999 }}
+              style={{ color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8 }}
             >
               <Play size={14} /> {isRunning ? 'Running...' : 'Run workflow'}
             </button>

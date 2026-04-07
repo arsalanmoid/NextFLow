@@ -9,6 +9,8 @@ interface NodeCardProps {
   cuCost?: number
   executionStatus?: 'idle' | 'running' | 'success' | 'error'
   previewContent?: React.ReactNode
+  previewHeight?: number
+  cardWidth?: number
   children?: React.ReactNode
 }
 
@@ -18,6 +20,8 @@ export function NodeCard({
   cuCost = 1,
   executionStatus = 'idle',
   previewContent,
+  previewHeight = 220,
+  cardWidth = 255,
   children,
 }: NodeCardProps) {
   const { execute } = useExecute()
@@ -44,7 +48,7 @@ export function NodeCard({
   return (
     <div className={`${statusClass}${fadingOut ? ' node-glow-fade' : ''} nf-node-wrapper`} style={{ position: 'relative' }}>
       {/* Per-node run button — appears above card on hover */}
-      {nodeId && currentWorkflowId && (
+      {nodeId && (
         <button
           className="nodrag node-run-btn"
           onClick={() => execute('SINGLE', [nodeId])}
@@ -68,7 +72,7 @@ export function NodeCard({
       <div
         className="nf-node-card"
         style={{
-          width: 255,
+          width: cardWidth,
           background: '#1e1e1e',
           borderRadius: 16,
           border: '1px solid rgba(255,255,255,0.07)',
@@ -94,7 +98,7 @@ export function NodeCard({
         {/* Preview area */}
         <div style={{
           width: '100%',
-          height: 220,
+          height: previewHeight,
           background: '#161616',
           display: 'flex',
           alignItems: 'center',
