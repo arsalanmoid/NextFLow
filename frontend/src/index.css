@@ -4,6 +4,10 @@
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  filter: brightness(1.05);
+}
+
 /* ── Base ── */
 body {
   background: #101010;

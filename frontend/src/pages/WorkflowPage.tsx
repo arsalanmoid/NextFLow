@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import ReactFlow, {
   Background,
   MiniMap,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useWorkflowStore } from '../store/workflowStore'
 import { useWorkflowApi } from '../hooks/useApi'
+import { TEMPLATES } from '../components/dashboard/templates'
 import { useExecute } from '../hooks/useExecute'
 import { PresetSelector } from '../components/canvas/PresetSelector'
 import { LeftSidebar } from '../components/sidebar/LeftSidebar'
@@ -41,6 +42,7 @@ type Tool = 'select' | 'pan' | 'cut' | 'connect'
 export function WorkflowPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isNew = id === 'new'
 
   const [isRenaming, setIsRenaming] = useState(false)
@@ -87,12 +89,14 @@ export function WorkflowPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Load existing workflow from DB (or reset for new)
+  // Load existing workflow from DB (or reset for new / template)
   useEffect(() => {
     if (isNew || !id) {
-      setNodes([])
-      setEdges([])
-      setWorkflowName('Untitled')
+      const tplId = searchParams.get('template')
+      const tpl = tplId ? TEMPLATES.find(t => t.id === tplId) : null
+      setNodes(tpl ? tpl.nodes as any : [])
+      setEdges(tpl ? tpl.edges as any : [])
+      setWorkflowName(tpl ? tpl.name : 'Untitled')
       useWorkflowStore.setState({ currentWorkflowId: null, runs: [] })
       return
     }
@@ -230,7 +234,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between pb-2 pointer-events-none" style={{ zIndex: 20, padding: '16px 20px 8px 16px' }}>
           {/* LEFT — logo + name pill */}
           <div className="pointer-events-auto relative flex items-center" ref={logoMenuRef}
-            style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '6px 8px', gap: 0 }}
+            style={{ background: '#202020', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '6px 8px', gap: 0 }}
           >
             {/* Logo + dropdown arrow — opens menu */}
             <button
@@ -276,7 +280,8 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
                 className="rounded-lg cursor-pointer"
                 style={{
                   padding: '8px 10px 8px 6px', background: 'transparent', border: 'none',
-                  fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '-0.01em',
+                  fontSize: 14, fontWeight: 400, color: '#fff', letterSpacing: '-0.01em',
+                  fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
@@ -389,11 +394,11 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
             proOptions={{ hideAttribution: true }}
             style={{ background: isDark ? '#101010' : '#f0f0f0' }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={isDark ? 'rgba(100,100,100,0.4)' : 'rgba(0,0,0,0.2)'} />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={isDark ? '#282828' : 'rgba(0,0,0,0.2)'} />
             {nodes.length === 0 && !showPresets && (
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-10">
-                <p className="text-sm font-medium mb-1" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>Add a node</p>
-                <p className="text-xs" style={{ color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)' }}>
+                <p className="text-sm font-medium mb-1" style={{ color: isDark ? '#808080' : 'rgba(0,0,0,0.3)' }}>Add a node</p>
+                <p className="text-xs" style={{ color: isDark ? '#808080' : 'rgba(0,0,0,0.18)' }}>
                   Double click or right click
                 </p>
               </div>
@@ -454,7 +459,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
           </div>
           <div className="pointer-events-auto relative flex items-center" style={{
             position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 20,
-            background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)',
+            background: '#202020', border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 14, padding: '7px 14px', gap: 4, display: 'flex',
           }}>
             {/* + button with tooltip */}

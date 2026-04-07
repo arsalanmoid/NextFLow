@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { UserButton } from '@clerk/clerk-react'
 import { Search, ChevronDown, EyeOff, Eye, ArrowRight, Plus, Check, MoreVertical, ExternalLink, Pencil, Copy, Trash2 } from 'lucide-react'
 import { useWorkflowApi, type WorkflowListItem } from '../hooks/useApi'
+import { TemplateGrid } from '../components/dashboard/TemplateGrid'
 
 function WorkflowMinimap({ nodes, edges }: Pick<WorkflowListItem, 'nodes' | 'edges'>) {
   if (!nodes || nodes.length === 0) {
@@ -18,50 +19,32 @@ function WorkflowMinimap({ nodes, edges }: Pick<WorkflowListItem, 'nodes' | 'edg
   const rangeY = (maxY - minY + nodeH) || 1
   const pad = 24
 
+  const avail = 100 - pad * 2
+  const rects = new Map<string, { x: number; y: number; w: number; h: number }>()
+  for (const node of nodes) {
+    const x = pad + ((node.position.x - minX) / rangeX) * avail
+    const y = pad + ((node.position.y - minY) / rangeY) * avail
+    const w = Math.max(6, Math.min((nodeW / rangeX) * avail, 28))
+    const h = Math.max(4, Math.min((nodeH / rangeY) * avail, 16))
+    rects.set(node.id, { x, y, w, h })
+  }
+
   return (
-    <svg width="100%" height="100%" viewBox={`0 0 100 100`} preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
-      {/* Edges */}
+    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
       {edges?.map(edge => {
-        const src = nodes.find(n => n.id === edge.source)
-        const tgt = nodes.find(n => n.id === edge.target)
-        if (!src || !tgt) return null
-        const x1 = pad + ((src.position.x - minX + nodeW / 2) / rangeX) * (100 - pad * 2)
-        const y1 = pad + ((src.position.y - minY + nodeH / 2) / rangeY) * (100 - pad * 2)
-        const x2 = pad + ((tgt.position.x - minX + nodeW / 2) / rangeX) * (100 - pad * 2)
-        const y2 = pad + ((tgt.position.y - minY + nodeH / 2) / rangeY) * (100 - pad * 2)
+        const sr = rects.get(edge.source)
+        const tr = rects.get(edge.target)
+        if (!sr || !tr) return null
+        const x1 = sr.x + sr.w / 2, y1 = sr.y + sr.h / 2
+        const x2 = tr.x + tr.w / 2, y2 = tr.y + tr.h / 2
         const midY = (y1 + y2) / 2
         return (
-          <path
-            key={edge.id}
-            d={`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`}
-            fill="none"
-            stroke="rgba(59,130,246,0.4)"
-            strokeWidth="1"
-          />
+          <path key={edge.id} d={`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`} fill="none" stroke="rgba(59,130,246,0.4)" strokeWidth="1" />
         )
       })}
-      {/* Nodes */}
-      {nodes.map(node => {
-        const x = pad + ((node.position.x - minX) / rangeX) * (100 - pad * 2)
-        const y = pad + ((node.position.y - minY) / rangeY) * (100 - pad * 2)
-        const w = (nodeW / rangeX) * (100 - pad * 2)
-        const h = (nodeH / rangeY) * (100 - pad * 2)
-        const clampW = Math.max(6, Math.min(w, 28))
-        const clampH = Math.max(4, Math.min(h, 16))
-        return (
-          <rect
-            key={node.id}
-            x={x}
-            y={y}
-            width={clampW}
-            height={clampH}
-            rx="2"
-            fill="rgba(255,255,255,0.1)"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth="0.5"
-          />
-        )
-      })}
+      {Array.from(rects.entries()).map(([id, r]) => (
+        <rect key={id} x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="#404040" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+      ))}
     </svg>
   )
 }
@@ -78,7 +61,7 @@ function timeAgo(iso: string) {
   return `${days} days ago`
 }
 
-type Tab = 'Projects' | 'Apps' | 'Examples' | 'Templates'
+type Tab = 'Projects' | 'Templates'
 type SortBy = 'Last viewed' | 'Date created' | 'Alphabetical'
 type OrderBy = 'Newest first' | 'Oldest first' | 'A-Z' | 'Z-A'
 
@@ -247,9 +230,9 @@ export function DashboardPage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '0 32px 110px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <img src="https://www.krea.ai/api/img?f=webp&i=https%3A%2F%2Fs.krea.ai%2Ficons%2FNodeEditor.png&s=256" alt="Node Editor" style={{ width: 40, height: 40, borderRadius: 10 }} />
-            <span style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: font }}>Node Editor</span>
+            <span style={{ fontSize: 28, fontWeight: 400, color: '#fff', fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif' }}>Node Editor</span>
           </div>
-          <p style={{ fontSize: 14, fontWeight: 500, color: '#fff', maxWidth: 420, lineHeight: 1.65, marginBottom: 56, fontFamily: font, letterSpacing: '0.01em' }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: 'oklch(0.985 0 0)', maxWidth: 420, lineHeight: '24px', marginBottom: 56, fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif' }}>
             Nodes is the most powerful way to operate NextFlow.<br />
             Connect every tool and model into complex automated pipelines.
           </p>
@@ -282,7 +265,7 @@ export function DashboardPage() {
         }} />
         {/* Tabs */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {(['Projects', 'Apps', 'Examples', 'Templates'] as Tab[]).map(t => (
+          {(['Projects', 'Templates'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -429,9 +412,32 @@ export function DashboardPage() {
 
       {/* ── Workflow grid ──────────────────────────────────── */}
       <div style={{ padding: '28px 28px 48px' }}>
-        {loading ? (
+        {tab === 'Templates' ? (
+          <TemplateGrid />
+        ) : loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', fontFamily: font }}>Loading workflows...</p>
+          </div>
+        ) : workflows.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+            <img src="https://www.krea.ai/api/img?f=webp&i=https%3A%2F%2Fs.krea.ai%2Ficons%2FNodeEditor.png&s=256" alt="Node Editor" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 20 }} />
+            <p style={{ fontSize: 20, fontWeight: 400, color: 'oklch(0.985 0 0)', fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif', lineHeight: '24px', marginBottom: 10 }}>No Workflows Yet</p>
+            <p style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.4)', fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif', textAlign: 'center', lineHeight: 1.6 }}>
+              You haven't created any workflows yet.<br />
+              Get started by creating your first one.
+            </p>
+            <button
+              onClick={openNew}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              style={{
+                marginTop: 24, padding: '10px 28px', borderRadius: 999,
+                background: '#fff', color: '#111', fontWeight: 500, fontSize: 14,
+                border: 'none', cursor: 'pointer', transition: 'opacity .15s', fontFamily: font,
+              }}
+            >
+              New Workflow
+            </button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 18 }}>
@@ -447,14 +453,14 @@ export function DashboardPage() {
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
                 style={{
                   height: 150, borderRadius: 10,
-                  background: 'rgba(255,255,255,0.02)',
+                  background: '#262626',
                   border: '1px solid rgba(255,255,255,0.08)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'border-color .2s',
                 }}
               >
-                <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Plus size={20} color="#fff" />
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#f6f6f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Plus size={20} color="#262626" />
                 </div>
               </div>
               {/* Text below */}
@@ -476,7 +482,7 @@ export function DashboardPage() {
                   onMouseLeave={e => { if (contextMenu !== wf.id) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget.querySelector('.ctx-btn') as HTMLElement)?.style.setProperty('opacity', '0') } }}
                   style={{
                     height: 150, borderRadius: 10,
-                    background: '#141414',
+                    background: '#171717',
                     border: '1px solid rgba(255,255,255,0.08)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
@@ -572,10 +578,7 @@ export function DashboardPage() {
                       }}
                     />
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                      <img src="https://www.krea.ai/api/img?f=webp&i=https%3A%2F%2Fs.krea.ai%2Ficons%2FNodeEditor.png&s=256" alt="" style={{ width: 16, height: 16, borderRadius: 4 }} />
-                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: font, letterSpacing: '-0.01em' }}>{wf.name}</p>
-                    </div>
+                    <p style={{ fontSize: 16, fontWeight: 400, color: 'oklch(0.985 0 0)', fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"', lineHeight: '24px', marginBottom: 3 }}>{wf.name}</p>
                   )}
                   <p style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)', fontFamily: font }}>Edited {timeAgo(wf.updatedAt)}</p>
                 </div>
