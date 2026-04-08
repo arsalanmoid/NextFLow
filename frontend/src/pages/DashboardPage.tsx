@@ -278,7 +278,7 @@ export function DashboardPage() {
                 borderRadius: 10, cursor: 'pointer',
                 color: '#fff',
                 transition: 'color .2s ease, background .2s ease',
-                fontFamily: font, letterSpacing: '0.01em',
+                fontFamily: '"Suisse Intl", ui-sans-serif, system-ui, sans-serif', letterSpacing: '0.01em',
               }}
             >
               {t}
@@ -292,21 +292,21 @@ export function DashboardPage() {
           <div
             onFocusCapture={e => {
               const el = e.currentTarget as HTMLDivElement
-              el.style.border = '1px solid rgba(255,255,255,0.3)'
-              el.style.background = 'rgba(255,255,255,0.05)'
+              el.style.border = '1px solid rgba(255,255,255,0.15)'
+              el.style.background = '#202020'
               el.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.06), 0 0 14px 2px rgba(255,255,255,0.04)'
             }}
             onBlurCapture={e => {
               const el = e.currentTarget as HTMLDivElement
-              el.style.border = '1px solid rgba(255,255,255,0.22)'
-              el.style.background = 'transparent'
+              el.style.border = '1px solid rgba(255,255,255,0.08)'
+              el.style.background = '#202020'
               el.style.boxShadow = 'none'
             }}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '8px 14px', borderRadius: 8,
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.22)',
+              background: '#202020',
+              border: '1px solid rgba(255,255,255,0.08)',
               minWidth: 200,
               transition: 'border-color .3s ease, background .3s ease, box-shadow .4s ease',
             }}>
@@ -323,13 +323,13 @@ export function DashboardPage() {
           <div ref={sortRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowSort(v => !v)}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)')}
+              onMouseEnter={e => (e.currentTarget.style.background = '#2a2a2a')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#202020')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 14px', borderRadius: 8,
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.22)',
+                background: '#202020',
+                border: '1px solid rgba(255,255,255,0.08)',
                 fontSize: 13, fontWeight: 500, color: '#e5e7eb',
                 cursor: 'pointer', transition: 'border-color .15s', fontFamily: font,
                 whiteSpace: 'nowrap',
@@ -398,8 +398,8 @@ export function DashboardPage() {
             onMouseLeave={e => (e.currentTarget.style.borderColor = showEmpty ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.22)')}
             style={{
               padding: '8px 9px', borderRadius: 8,
-              background: showEmpty ? 'rgba(255,255,255,0.06)' : 'transparent',
-              border: `1px solid ${showEmpty ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.22)'}`,
+              background: '#202020',
+              border: '1px solid rgba(255,255,255,0.08)',
               cursor: 'pointer', color: showEmpty ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)',
               display: 'flex', alignItems: 'center',
               transition: 'border-color .15s, background .15s, color .15s',

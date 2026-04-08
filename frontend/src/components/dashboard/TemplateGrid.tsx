@@ -53,11 +53,11 @@ export function TemplateGrid() {
   const navigate = useNavigate()
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 18 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, justifyContent: 'center' }}>
       {/* Empty Workflow card */}
       <div
         onClick={() => navigate('/workflow/new')}
-        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
+        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, width: 220 }}
       >
         <div
           onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
@@ -84,7 +84,7 @@ export function TemplateGrid() {
         <div
           key={tpl.id}
           onClick={() => navigate(`/workflow/new?template=${tpl.id}`)}
-          style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
+          style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, width: 220 }}
         >
           <div
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}

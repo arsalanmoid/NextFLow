@@ -395,6 +395,7 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
                 </p>
               </div>
             )}
+
             <MiniMap position="bottom-right" style={{ bottom: 60, right: 16 }} nodeColor="#2a2a2a" maskColor="rgba(0,0,0,0.4)" />
           </ReactFlow>
         </div>
