@@ -116,18 +116,18 @@ function RunEntry({ run, index }: { run: WorkflowRun; index: number }) {
   )
 }
 
-const MIN_WIDTH = 36
-const MAX_WIDTH = 320
-const EXPANDED_THRESHOLD = 100
+const COLLAPSED_WIDTH = 4
+const EXPANDED_WIDTH = 240
+const SNAP_THRESHOLD = 100
 
 export function RightSidebar() {
-  const [width, setWidth] = useState(MIN_WIDTH)
+  const [width, setWidth] = useState(EXPANDED_WIDTH)
   const runs = useWorkflowStore(s => s.runs)
   const dragging = useRef(false)
   const startX = useRef(0)
   const startW = useRef(0)
 
-  const isExpanded = width > EXPANDED_THRESHOLD
+  const isExpanded = width > SNAP_THRESHOLD
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -138,7 +138,7 @@ export function RightSidebar() {
     const onMove = (ev: MouseEvent) => {
       if (!dragging.current) return
       const delta = startX.current - ev.clientX
-      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW.current + delta))
+      const next = Math.min(EXPANDED_WIDTH, Math.max(COLLAPSED_WIDTH, startW.current + delta))
       setWidth(next)
     }
     const onUp = () => {
@@ -156,8 +156,8 @@ export function RightSidebar() {
         width,
         minWidth: width,
         height: '100%',
-        background: '#000000',
-        borderLeft: '1px solid rgba(255,255,255,0.08)',
+        background: isExpanded ? '#000000' : 'transparent',
+        borderLeft: isExpanded ? '1px solid rgba(255,255,255,0.08)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -167,7 +167,7 @@ export function RightSidebar() {
         flexShrink: 0,
       }}
     >
-      {isExpanded ? (
+      {isExpanded && (
         <>
           <div style={{ padding: '14px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '-0.01em', fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif' }}>
@@ -190,7 +190,7 @@ export function RightSidebar() {
             )}
           </div>
         </>
-      ) : null}
+      )}
 
       {/* Drag handle — left edge */}
       <div

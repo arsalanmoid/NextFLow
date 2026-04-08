@@ -30,7 +30,7 @@ const SaveWorkflowSchema = z.object({
   edges: z.array(EdgeSchema),
 })
 
-// ── GET /api/workflows — list user's workflows ────────────────
+// ── GET /api/workflows — list user's workflows (20 most recent) ──
 router.get('/', requireAuth, async (req, res) => {
   const { userId } = getAuth(req)
   try {
@@ -38,6 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
       where:   { userId: userId! },
       orderBy: { updatedAt: 'desc' },
       select:  { id: true, name: true, updatedAt: true, createdAt: true, nodes: true, edges: true },
+      take: 20,
     })
     res.json(workflows)
   } catch (err) {
@@ -74,7 +75,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   try {
     const workflow = await prisma.workflow.findFirst({
       where:   { id, userId: userId! },
-      include: { runs: { orderBy: { createdAt: 'desc' }, take: 20 } },
+      include: { runs: { orderBy: { createdAt: 'desc' }, take: 10 } },
     })
     if (!workflow) { res.status(404).json({ error: 'Not found' }); return }
     res.json(workflow)
