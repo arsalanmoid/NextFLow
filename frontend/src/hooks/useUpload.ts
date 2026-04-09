@@ -14,7 +14,8 @@ export function useUpload() {
     setUploading(true)
     incrementUploads()
     try {
-      const token = await getToken()
+      // Force a fresh token so it doesn't expire during large uploads
+      const token = await getToken({ skipCache: true })
       const form = new FormData()
       form.append('file', file)
 
