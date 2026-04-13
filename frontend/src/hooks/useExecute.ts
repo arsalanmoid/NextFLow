@@ -1,71 +1,131 @@
 import { useCallback } from 'react'
-import { useApi } from './useApi'
+import { useAuth } from '@clerk/clerk-react'
 import { useWorkflowStore } from '../store/workflowStore'
-import type { RunScope, NodeResult, WorkflowRun } from '../types'
+import type { RunScope } from '../types'
+
+const BASE = import.meta.env.VITE_API_URL ?? ''
+
+function parseSSE(text: string): { event: string; data: string }[] {
+  const events: { event: string; data: string }[] = []
+  const blocks = text.split('\n\n')
+  for (const block of blocks) {
+    if (!block.trim()) continue
+    let event = ''
+    let data = ''
+    for (const line of block.split('\n')) {
+      if (line.startsWith('event: ')) event = line.slice(7)
+      else if (line.startsWith('data: ')) data = line.slice(6)
+    }
+    if (event && data) events.push({ event, data })
+  }
+  return events
+}
 
 export function useExecute() {
-  const { apiFetch } = useApi()
+  const { getToken } = useAuth()
   const store = useWorkflowStore
 
   const execute = useCallback(async (
     scope: RunScope,
     selectedNodeIds?: string[],
   ) => {
-    const { currentWorkflowId, nodes, setNodeExecuting, setIsRunning, setNodeResult, addRun, updateNodeData } = store.getState()
+    const { currentWorkflowId, setNodeExecuting, setIsRunning, setNodeResult, addRun, updateNodeData } = store.getState()
     if (!currentWorkflowId) {
       console.warn('Save the workflow before running')
       return
     }
 
-    // Mark all target nodes as executing
     setIsRunning(true)
-    const targetIds = scope === 'FULL'
-      ? nodes.map(n => n.id)
-      : (selectedNodeIds ?? [])
-    for (const id of targetIds) {
-      setNodeExecuting(id, true)
-      updateNodeData(id, { executionStatus: 'running' } as any)
-    }
 
     try {
-      const run = await apiFetch('/api/execute', {
+      const token = await getToken()
+      const res = await fetch(`${BASE}/api/execute`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           workflowId: currentWorkflowId,
           scope,
           selectedNodeIds,
         }),
-      }) as WorkflowRun & { nodeResults: NodeResult[] }
+      })
 
-      // Update each node with its result
-      for (const nr of run.nodeResults) {
-        setNodeExecuting(nr.nodeId, false)
-        setNodeResult(nr.nodeId, nr)
-        updateNodeData(nr.nodeId, {
-          executionStatus: nr.status === 'success' ? 'success' : 'error',
-        } as any)
+      if (!res.body) {
+        throw new Error(`Execute failed: ${res.status}`)
       }
 
-      // Add run to history
-      addRun({
-        id: run.id,
-        workflowId: run.workflowId,
-        status: run.status,
-        scope: run.scope,
-        durationMs: run.durationMs,
-        nodeResults: run.nodeResults,
-        createdAt: run.createdAt,
-      })
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Only process complete events (ending with \n\n)
+        const lastDoubleNewline = buffer.lastIndexOf('\n\n')
+        if (lastDoubleNewline === -1) continue
+
+        const complete = buffer.slice(0, lastDoubleNewline + 2)
+        buffer = buffer.slice(lastDoubleNewline + 2)
+
+        const events = parseSSE(complete)
+
+        for (const { event, data } of events) {
+          try {
+            const parsed = JSON.parse(data)
+
+            switch (event) {
+              case 'layer:start': {
+                for (const nodeId of parsed.nodeIds) {
+                  setNodeExecuting(nodeId, true)
+                  updateNodeData(nodeId, { executionStatus: 'running' } as any)
+                }
+                break
+              }
+
+              case 'node:done': {
+                setNodeExecuting(parsed.nodeId, false)
+                setNodeResult(parsed.nodeId, parsed)
+                updateNodeData(parsed.nodeId, {
+                  executionStatus: parsed.status === 'success' ? 'success' : 'error',
+                } as any)
+                break
+              }
+
+              case 'run:done': {
+                addRun({
+                  id: parsed.id,
+                  workflowId: parsed.workflowId,
+                  status: parsed.status,
+                  scope: parsed.scope,
+                  durationMs: parsed.durationMs,
+                  nodeResults: parsed.nodeResults,
+                  createdAt: parsed.createdAt,
+                })
+                break
+              }
+
+              case 'error': {
+                console.error('Execution error from server:', parsed.error)
+                break
+              }
+            }
+          } catch {
+            // ignore malformed JSON
+          }
+        }
+      }
     } catch (err: any) {
       console.error('Execution failed:', err)
-      for (const id of targetIds) {
-        setNodeExecuting(id, false)
-        updateNodeData(id, { executionStatus: 'error' } as any)
-      }
     } finally {
       setIsRunning(false)
     }
-  }, [apiFetch])
+  }, [getToken])
 
   return { execute }
 }

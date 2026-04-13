@@ -29,7 +29,7 @@ function getNodeOutput(outputs: Record<string, any>, nodeId: string, _handle?: s
   return result.output ?? result
 }
 
-// ── POST /api/execute ─────────────────────────────────────────
+// ── POST /api/execute (SSE stream) ───────────────────────────
 router.post('/', requireAuth, async (req, res) => {
   const { userId } = getAuth(req)
   const parsed = ExecuteSchema.safeParse(req.body)
@@ -37,12 +37,37 @@ router.post('/', requireAuth, async (req, res) => {
 
   const { workflowId, scope, selectedNodeIds } = parsed.data
 
+  // SSE setup
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
+
+  let closed = false
+  req.on('close', () => { closed = true })
+  res.on('error', () => { closed = true })
+
+  const send = (event: string, data: any) => {
+    if (closed || res.writableEnded) return
+    try {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    } catch (e) {
+      closed = true
+    }
+  }
+
+  const finish = () => {
+    if (!res.writableEnded) {
+      try { res.end() } catch {}
+    }
+  }
+
   try {
-    // Load workflow
     const workflow = await prisma.workflow.findFirst({
       where: { id: workflowId, userId: userId! },
     })
-    if (!workflow) { res.status(404).json({ error: 'Workflow not found' }); return }
+    if (!workflow) { send('error', { error: 'Workflow not found' }); finish(); return }
 
     const allNodes = workflow.nodes as any[]
     const allEdges = workflow.edges as any[]
@@ -52,8 +77,6 @@ router.post('/', requireAuth, async (req, res) => {
     let edgesToUse = allEdges
     if (scope === 'SINGLE' && selectedNodeIds?.length) {
       nodesToRun = allNodes.filter(n => selectedNodeIds.includes(n.id))
-      // Include edges where both source and target are in the selected set
-      // Plus edges from upstream nodes (to gather inputs)
       const nodeIds = new Set(selectedNodeIds)
       edgesToUse = allEdges.filter(e => nodeIds.has(e.target))
     } else if (scope === 'PARTIAL' && selectedNodeIds?.length) {
@@ -78,11 +101,13 @@ router.post('/', requireAuth, async (req, res) => {
       },
     })
 
+    send('run:start', { runId: run.id })
+
     const startTime = Date.now()
     const outputs: Record<string, any> = {}
     const nodeResults: any[] = []
 
-    // Pre-populate outputs for source-only nodes (Text, UploadImage, UploadVideo)
+    // Pre-populate outputs for source-only nodes
     for (const node of allNodes) {
       if (node.type === 'textNode') {
         outputs[node.id] = { _type: 'textNode', text: node.data?.text ?? '', output: node.data?.text ?? '' }
@@ -93,9 +118,13 @@ router.post('/', requireAuth, async (req, res) => {
       }
     }
 
-    // Execute layer by layer
+    // Execute layer by layer — stream progress
     for (const layer of layers) {
+      if (closed) break
+      send('layer:start', { nodeIds: layer })
+
       await Promise.all(layer.map(async (nodeId) => {
+        if (closed) return
         const node = allNodes.find(n => n.id === nodeId)
         if (!node) return
 
@@ -107,7 +136,6 @@ router.post('/', requireAuth, async (req, res) => {
 
           switch (node.type) {
             case 'textNode': {
-              // Already pre-populated — record as instant success
               result = { output: node.data?.text ?? '' }
               break
             }
@@ -123,7 +151,6 @@ router.post('/', requireAuth, async (req, res) => {
             }
 
             case 'llmNode': {
-              // Gather inputs from connected nodes
               let systemPrompt: string | undefined
               let userMessage = ''
               const imageUrls: string[] = []
@@ -165,7 +192,6 @@ router.post('/', requireAuth, async (req, res) => {
                 heightPercent: node.data?.heightPercent ?? 100,
               })
               const cropRun = await runs.poll(cropHandle.id, { pollIntervalMs: 1000 })
-              console.log('Crop run output:', JSON.stringify(cropRun.output))
               if (!cropRun.isSuccess) throw new Error((cropRun as any).error?.message ?? 'Crop image task failed')
               result = (cropRun as any).output
               break
@@ -185,7 +211,6 @@ router.post('/', requireAuth, async (req, res) => {
                 timestamp,
               })
               const frameRun = await runs.poll(frameHandle.id, { pollIntervalMs: 1000 })
-              console.log('Frame run output:', JSON.stringify(frameRun.output))
               if (!frameRun.isSuccess) throw new Error((frameRun as any).error?.message ?? 'Extract frame task failed')
               result = (frameRun as any).output
               break
@@ -193,23 +218,27 @@ router.post('/', requireAuth, async (req, res) => {
           }
 
           outputs[nodeId] = result
-          nodeResults.push({
+          const nr = {
             nodeId,
             nodeType: node.type,
             status: 'success',
             output: result?.output ?? result,
             durationMs: Date.now() - nodeStart,
             startedAt: new Date(nodeStart).toISOString(),
-          })
+          }
+          nodeResults.push(nr)
+          send('node:done', nr)
         } catch (err: any) {
-          nodeResults.push({
+          const nr = {
             nodeId,
             nodeType: node.type,
             status: 'error',
             error: err.message ?? 'Unknown error',
             durationMs: Date.now() - nodeStart,
             startedAt: new Date(nodeStart).toISOString(),
-          })
+          }
+          nodeResults.push(nr)
+          send('node:done', nr)
         }
       }))
     }
@@ -219,7 +248,6 @@ router.post('/', requireAuth, async (req, res) => {
     const hasSuccess = nodeResults.some(r => r.status === 'success')
     const finalStatus = hasError && hasSuccess ? 'PARTIAL' : hasError ? 'FAILED' : 'SUCCESS'
 
-    // Update run
     const updatedRun = await prisma.workflowRun.update({
       where: { id: run.id },
       data: {
@@ -229,10 +257,12 @@ router.post('/', requireAuth, async (req, res) => {
       },
     })
 
-    res.json(updatedRun)
+    send('run:done', updatedRun)
+    finish()
   } catch (err: any) {
     console.error('Execution error:', err)
-    res.status(500).json({ error: err.message ?? 'Execution failed' })
+    send('error', { error: err.message ?? 'Execution failed' })
+    finish()
   }
 })
 
