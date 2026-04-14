@@ -57,7 +57,7 @@ export function LLMNode({ id, data }: NodeProps<LLMNodeData>) {
           style={{
             position: 'absolute', top: 6, right: 6,
             display: 'flex', alignItems: 'center', gap: 4,
-            padding: '3px 8px', borderRadius: 6, border: 'none',
+            padding: '3px 8px', borderRadius: 6,
             background: '#2a2a2a',
             border: '1px solid rgba(255,255,255,0.1)',
             color: '#e5e7eb',
