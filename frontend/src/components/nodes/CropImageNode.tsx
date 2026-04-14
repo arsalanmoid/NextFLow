@@ -1,4 +1,5 @@
 import { Handle, Position, useEdges, type NodeProps } from 'reactflow'
+import { ExternalLink } from 'lucide-react'
 import { NodeCard } from './NodeCard'
 import { useWorkflowStore } from '../../store/workflowStore'
 import type { CropImageNodeData } from '../../types'
@@ -33,10 +34,34 @@ export function CropImageNode({ id, data }: NodeProps<CropImageNodeData>) {
   const connectedTargets = new Set(edges.filter(e => e.target === id).map(e => e.targetHandle))
   const result = nodeResults[id]
 
-  const preview = result?.status === 'success' && typeof result.output === 'string'
-    ? <img src={result.output} alt="cropped" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-    : data.resultUrl
-    ? <img src={data.resultUrl} alt="cropped" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  const imageUrl = (result?.status === 'success' && typeof result.output === 'string')
+    ? result.output
+    : data.resultUrl ?? null
+
+  const preview = imageUrl
+    ? <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <img src={imageUrl} alt="cropped" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <a
+          href={imageUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="nodrag"
+          title="Open full size"
+          style={{
+            position: 'absolute', top: 6, right: 6,
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 6,
+            background: '#2a2a2a',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#e5e7eb',
+            fontSize: 11, fontWeight: 500, textDecoration: 'none', transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#333333')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
+        >
+          <ExternalLink size={11} /> Open
+        </a>
+      </div>
     : undefined
 
   return (

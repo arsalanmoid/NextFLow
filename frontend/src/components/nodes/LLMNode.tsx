@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Handle, Position, useEdges, type NodeProps } from 'reactflow'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Copy, Check } from 'lucide-react'
 import { NodeCard } from './NodeCard'
 import { useWorkflowStore } from '../../store/workflowStore'
 import { GEMINI_MODELS } from '../../types'
@@ -13,6 +13,7 @@ export function LLMNode({ id, data }: NodeProps<LLMNodeData>) {
   const edges          = useEdges()
   const [open, setOpen] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 })
+  const [copied, setCopied] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
@@ -35,9 +36,36 @@ export function LLMNode({ id, data }: NodeProps<LLMNodeData>) {
 
   const selected = GEMINI_MODELS.find(m => m.value === data.model) ?? GEMINI_MODELS[0]
 
-  const preview = result?.status === 'success' && result.output
-    ? <div style={{ padding: '10px 12px', fontSize: 12, color: '#e5e7eb', lineHeight: 1.55, maxHeight: 140, overflow: 'auto' }}>
-        {String(result.output)}
+  const outputText = result?.status === 'success' && result.output ? String(result.output) : null
+
+  const handleCopy = () => {
+    if (!outputText) return
+    navigator.clipboard.writeText(outputText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const preview = outputText
+    ? <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <div style={{ padding: '10px 12px', fontSize: 12, color: '#e5e7eb', lineHeight: 1.55, height: '100%', overflowY: 'auto' }}>
+          {outputText}
+        </div>
+        <button
+          className="nodrag"
+          onClick={handleCopy}
+          title="Copy output"
+          style={{
+            position: 'absolute', top: 6, right: 6,
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 6, border: 'none',
+            background: '#2a2a2a',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#e5e7eb',
+            fontSize: 11, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s',
+          }}
+        >
+          {copied ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
+        </button>
       </div>
     : result?.status === 'error'
     ? <div style={{ padding: 10, fontSize: 12, color: '#ef4444' }}>{result.error}</div>

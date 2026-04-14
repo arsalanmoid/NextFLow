@@ -43,7 +43,7 @@ function Minimap({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) {
         )
       })}
       {Array.from(rects.entries()).map(([id, r]) => (
-        <rect key={id} x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="#404040" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+        <rect key={id} x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="#3a3a3a" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
       ))}
     </svg>
   )
@@ -60,12 +60,12 @@ export function TemplateGrid() {
         style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, width: 220 }}
       >
         <div
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = '#333333')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
           style={{
             height: 150, borderRadius: 10,
-            background: '#262626',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: '#141414',
+            border: '1px solid #1e1e1e',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'border-color .2s',
           }}
@@ -87,12 +87,12 @@ export function TemplateGrid() {
           style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, width: 220 }}
         >
           <div
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#333333')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
             style={{
               height: 150, borderRadius: 10,
-              background: '#171717',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: '#141414',
+              border: '1px solid #1e1e1e',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'border-color .2s',
               overflow: 'hidden', position: 'relative',

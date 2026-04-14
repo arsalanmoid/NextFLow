@@ -18,6 +18,7 @@ import { useWorkflowApi } from '../hooks/useApi'
 import { TEMPLATES } from '../components/dashboard/templates'
 import { useExecute } from '../hooks/useExecute'
 import { PresetSelector } from '../components/canvas/PresetSelector'
+import { WorkflowStarterOverlay } from '../components/canvas/WorkflowStarterOverlay'
 import { LeftSidebar } from '../components/sidebar/LeftSidebar'
 import { RightSidebar } from '../components/sidebar/RightSidebar'
 import { TextNode } from '../components/nodes/TextNode'
@@ -47,6 +48,7 @@ export function WorkflowPage() {
 
   const [isRenaming, setIsRenaming] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
+  const [showStarter, setShowStarter] = useState(isNew)
   const [showLogoMenu, setShowLogoMenu] = useState(false)
   const theme = (localStorage.getItem('nf-theme') as 'dark' | 'light') ?? 'dark'
   const isDark = theme === 'dark'
@@ -97,7 +99,8 @@ export function WorkflowPage() {
       setNodes(tpl ? tpl.nodes as any : [])
       setEdges(tpl ? tpl.edges as any : [])
       setWorkflowName(tpl ? tpl.name : 'Untitled')
-      useWorkflowStore.setState({ currentWorkflowId: null, runs: [] })
+      useWorkflowStore.setState({ currentWorkflowId: null, runs: [], nodeResults: {}, executingNodes: new Set(), isRunning: false })
+      setShowStarter(!tpl)
       return
     }
     getWorkflow(id)
@@ -399,6 +402,18 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() }
             <MiniMap position="bottom-right" style={{ bottom: 60, right: 16 }} nodeColor="#2a2a2a" maskColor="rgba(0,0,0,0.4)" />
           </ReactFlow>
         </div>
+
+        {/* Starter overlay — shown only on new empty workflows */}
+        {showStarter && (
+          <WorkflowStarterOverlay
+            onSelect={(presetNodes, presetEdges) => {
+              setNodes(presetNodes as any)
+              setEdges(presetEdges as any)
+              setShowStarter(false)
+            }}
+            onDismiss={() => setShowStarter(false)}
+          />
+        )}
 
         {/* Bottom bar */}
         <div className="absolute bottom-0 left-0 right-0 z-20 flex items-end pointer-events-none" style={{ padding: '0 20px 20px 20px' }}>

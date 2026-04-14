@@ -43,7 +43,7 @@ function WorkflowMinimap({ nodes, edges }: Pick<WorkflowListItem, 'nodes' | 'edg
         )
       })}
       {Array.from(rects.entries()).map(([id, r]) => (
-        <rect key={id} x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="#404040" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+        <rect key={id} x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="#3a3a3a" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
       ))}
     </svg>
   )
@@ -158,7 +158,14 @@ export function DashboardPage() {
   const font = '-apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif'
 
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', overflowY: 'auto', overflowX: 'hidden', background: '#111', color: '#e5e7eb', fontFamily: font, position: 'relative', scrollBehavior: 'smooth' }}>
+    <div style={{ width: '100vw', minHeight: '100vh', overflowY: 'auto', overflowX: 'hidden', background: '#0c0c0c', color: '#e5e7eb', fontFamily: font, position: 'relative', scrollBehavior: 'smooth' }}>
+
+      {/* Background gradient glows */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-20%', right: '10%', width: 600, height: 600, background: '#6b21a8', opacity: 0.08, borderRadius: '50%', filter: 'blur(150px)' }} />
+        <div style={{ position: 'absolute', top: '20%', left: '-10%', width: 500, height: 500, background: '#1d4ed8', opacity: 0.06, borderRadius: '50%', filter: 'blur(140px)' }} />
+        <div style={{ position: 'absolute', bottom: '-10%', right: '30%', width: 400, height: 400, background: '#ea580c', opacity: 0.04, borderRadius: '50%', filter: 'blur(120px)' }} />
+      </div>
 
       {/* ── Navbar ─────────────────────────────────────────── */}
       <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', background: 'transparent' }}>
@@ -225,7 +232,7 @@ export function DashboardPage() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <div style={{ position: 'relative', width: '100%', height: 460, overflow: 'hidden', background: '#111', backgroundImage: 'url(https://s.krea.ai/nodesHeaderBannerBlurGradient.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', height: 460, overflow: 'hidden', background: '#0c0c0c', backgroundImage: 'url(https://s.krea.ai/nodesHeaderBannerBlurGradient.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '0 32px 110px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -248,7 +255,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── Second section (tabs + grid) ─────────────────── */}
-      <div style={{ position: 'relative', background: 'radial-gradient(ellipse 80% 40% at 20% 0%, rgba(200,200,210,0.07) 0%, rgba(255,255,255,0.03) 40%, transparent 70%), #111' }}>
+      <div style={{ position: 'relative', background: 'radial-gradient(ellipse 80% 40% at 20% 0%, rgba(200,200,210,0.07) 0%, rgba(255,255,255,0.03) 40%, transparent 70%), #0c0c0c' }}>
         {/* Left-to-right illumination overlay */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(180,180,190,0.02) 40%, transparent 75%)', zIndex: 0 }} />
 
@@ -478,12 +485,12 @@ export function DashboardPage() {
               >
                 {/* Thumbnail container */}
                 <div
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; (e.currentTarget.querySelector('.ctx-btn') as HTMLElement)?.style.setProperty('opacity', '1') }}
-                  onMouseLeave={e => { if (contextMenu !== wf.id) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget.querySelector('.ctx-btn') as HTMLElement)?.style.setProperty('opacity', '0') } }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#333333'; (e.currentTarget.querySelector('.ctx-btn') as HTMLElement)?.style.setProperty('opacity', '1') }}
+                  onMouseLeave={e => { if (contextMenu !== wf.id) { e.currentTarget.style.borderColor = '#1e1e1e'; (e.currentTarget.querySelector('.ctx-btn') as HTMLElement)?.style.setProperty('opacity', '0') } }}
                   style={{
                     height: 150, borderRadius: 10,
-                    background: '#171717',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: '#141414',
+                    border: '1px solid #1e1e1e',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
                     transition: 'border-color .2s',
